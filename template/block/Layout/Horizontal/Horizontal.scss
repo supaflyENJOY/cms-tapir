@@ -1,0 +1,8 @@
+.block-layout-horizontal {
+  background: #5f9638;
+  display: flex;
+}
+
+.block-layout-horizontal > * {
+  flex-grow: 1;
+}

@@ -1,0 +1,74 @@
+{
+  pageName: 'Hello Page',
+  val: 3,
+  blocks: [
+    { name: 'HelloBlock',
+      data: {
+        text: 'property value'
+      }
+    },
+    { name: 'HelloBlock',
+      data: {
+        text: 'another property value'
+      }
+    },
+
+
+    { name: 'HelloBlock',
+      data: {
+        anotherText: 'overridden value',
+        text: 'third block value'
+      }
+    },
+    { name: 'Layout/Horizontal/Horizontal',
+      data: {
+        blocks: [
+          {
+            name: 'HelloBlock',
+            data: {
+              text: 'property value'
+            }
+          },
+          { name: 'Layout/Vertical/Vertical',
+            data: {
+              text: 'property value',
+              blocks: [
+                {
+                  name: 'HelloBlock',
+                  data: {
+                    text: 'property value'
+                  }
+                },
+                {
+                  name: 'HelloBlock',
+                  data: {
+                    text: 'property value'
+                  }
+                }
+              ]
+            }
+          },
+          {
+            name: 'HelloBlock',
+            data: {
+              text: 'another property value'
+            }
+          },
+
+          {
+            name: 'HelloBlock',
+            data: {
+              anotherText: 'overridden value',
+              text: 'third block value'
+            }
+          }
+        ]
+      }
+    },
+    { name: 'Layout/Horizontal/Horizontal' }
+  ],
+  schema: {
+    pageName: {type: 'String'},
+    val: {type: 'Number'}
+  }
+}

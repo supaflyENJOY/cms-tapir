@@ -1,0 +1,8 @@
+{
+  anotherText: 'From block config',
+  schema: {
+    text: {type: 'String'},
+    anotherText: {type: 'String'}
+  },
+
+}

@@ -1,0 +1,7 @@
+{
+  description: 'Vertical blocks layout',
+  blocks: [],
+  schema: {
+    blocks: {type: 'Array'}
+  }
+}
