@@ -18,13 +18,13 @@ process
   .on('unhandledRejection', (reason, p) => {
     debugger
     console.error(reason, 'Unhandled Rejection at Promise', p);
-    fs.appendFileSync(path.join(__dirname,'tmp/log'), new Date().toISOString()+'\n'+reason+'\n\n');
+    //fs.appendFileSync(path.join(__dirname,'tmp/log'), new Date().toISOString()+'\n'+reason+'\n\n');
   })
   .on('uncaughtException', (err, p) => {
     debugger
     console.error(err, 'Unhandled Rejection at Promise', p);
 
-    fs.appendFileSync(path.join(__dirname,'tmp/log'), new Date().toISOString()+'\n'+err.stack+'\n\n');
+    //fs.appendFileSync(path.join(__dirname,'tmp/log'), new Date().toISOString()+'\n'+err.stack+'\n\n');
   });
 
 app.disable('x-powered-by');
@@ -63,7 +63,7 @@ var config = global.config = require('./config/config.js');
 var route = require('./config/route.js');
 
 //var simpleTransformToAMD = require('./pack/babel-plugin-transform-2015es-to-amd')
-const useSourceMaps = env.LAMUR_ENV === 'DEVELOP';
+const useSourceMaps = env.ENV === 'DEVELOP';
 
 var jsx = require('./src/transform/jsx.js');
 
@@ -94,7 +94,9 @@ var generateServe = function(pathName, useConfig) {
     if(req.originalUrl.match(/\.scss?$/)!==null){
       return await serveScss.serve('template/'+req.originalUrl, req, res, next)
     }
-
+    if(req.originalUrl.match(/\.jsx\.map?$/)!==null){
+      return next()
+    }
     var dependency = new fileReader.Dependency(),
       blockName = req.originalUrl.substr( ('/'+pathName).length + 1 );// args.name;
 
@@ -110,6 +112,7 @@ var generateServe = function(pathName, useConfig) {
 
       }
     }
+    var map;
     try{
       var result = await dependency.result( async function(){
 
@@ -133,13 +136,14 @@ ${blockCode}
           dependency,
           blockPath
         );
-
+        map = code.map;
         return code.code;
 
       } );
-
-      cache[ req.url + '.map' ] = JSON.stringify( result.map );
-      res.set( 'SourceMap', req.url + '.map' );
+      debugger
+console.log( `${pathName}/${blockName}`)
+      cache[ `/${pathName}/${blockName}` + '.map' ] = JSON.stringify( map );
+      res.set( 'SourceMap', `/${pathName}/${blockName}` + '.map' );
       res.set( 'Content-type', 'application/javascript; charset=UTF-8' );
 
       res.end(result)

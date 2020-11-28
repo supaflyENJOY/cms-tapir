@@ -22,7 +22,6 @@ const util = global.util = {
 
           if(path.relative(util.root, possibility)[0] === '.')
             continue;
-                    console.log('1',possibility)
           possible.push(possibility);
         }
         return possible;

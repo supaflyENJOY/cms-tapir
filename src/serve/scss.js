@@ -24,28 +24,31 @@ module.exports = {
           data: data,
           file: fileName,//path.join( __dirname, dir, req.url ),
           sourceMap: useSourceMaps,
-          importer: async function( url, prev, done ){ //file, prev, done
+          importer: function( url, prev, done ){ //file, prev, done
             if(url[0] === '/'){
               url = url.substr(1);
             }
             var displayName = path.relative( dir(config.template), path.resolve( path.dirname( prev ), url ) ).replace(/\\/g, '/');
             var name = path.resolve( path.dirname( prev ), url );
             var paths = util.path.resolve(url, path.dirname( prev ), [dir(config.template), dir('/')])
+            ;(async function() {
+              for( var i = 0, _i = paths.length; i < _i; i++ ){
+                try{
+                  var fileData = await dependency.read( paths[ i ] );
+                  //debugger
+                  done( {
+                    contents: fileData,
+                    file: util.path.getDisplayName( paths[ i ] ) // only one of them is required, see section Special Behaviours.
+                  } );
+                  //console.log('Resolve scss dep ', url, 'for', paths[ i ]);
 
-            for( var i = 0, _i = paths.length; i < _i; i++ ){
-              try{
-                done( {
-                  contents: await dependency.read( paths[ i ] ),
-                  file: util.path.getDisplayName( paths[ i ] ) // only one of them is required, see section Special Behaviours.
-                } );
-                console.log('Resolve scss dep ', url, 'for', paths[ i ]);
+                  return;
+                }catch( e ){
 
-                return;
-              }catch( e ){
-
+                }
               }
-            }
-            done(new Error(`Can not resolve dependency ${url} for ${prev}!`))
+              done(new Error(`Can not resolve dependency ${url} for ${prev}!`));
+            })();
           }
         }, function( err, result ){
           if( err ){

@@ -34,7 +34,7 @@ var transformJSX = function(code, fileName, dependency, realPath, cb) {
         cacheCode[code] = {error: new Error(c.message)};
         cb(cacheCode[code].error);
       }else{
-        await Promise.all(importExtractor.state.map(async item=>{
+        /*await Promise.all(importExtractor.state.map(async item=>{
           var importFileName = util.path.resolve(item.from, realPath, [dir(config.template), dir('/')]);
           if(importFileName.length>1){
             debugger
@@ -42,7 +42,7 @@ var transformJSX = function(code, fileName, dependency, realPath, cb) {
           importFileName = importFileName[0].replace(/\\/g, '/');
           if(!(('/'+util.path.getDisplayName(importFileName)) in cache)){
             // add to cache
-            /*try{
+            try{
               var resolved = require.resolve( item.from, {
                 paths: [path.parse(path.resolve(fileName)).dir].concat(module.paths)
               } );
@@ -53,9 +53,9 @@ var transformJSX = function(code, fileName, dependency, realPath, cb) {
               cache[ '/' + util.path.getDisplayName( importFileName ) ] = `define("${util.path.getDisplayName( item.from )}", ["exports"], function(_exports){${
                 await fileReader.read( resolved )
               };_exports.default = ${item.name};_exports.__esModule = true;});`
-            }*/
+            }
           }
-        }));
+        }));*/
         cacheCode[code] = {error: false, code: d};
         cb(false, d);
       }

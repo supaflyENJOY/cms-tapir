@@ -48,10 +48,13 @@
               ]
             }
           },
+
           {
+            id: 'theBlock',
             name: 'HelloBlock',
             data: {
-              text: 'another property value'
+              text: 'another property value',
+              val: 50
             }
           },
 

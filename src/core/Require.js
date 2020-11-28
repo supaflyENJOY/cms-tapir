@@ -43,7 +43,7 @@ ansispan.foregroundColors = {
   };*/
 
 
-  if(window.env.LAMUR_ENV !== 'PRODUCTION'){
+  if(window.env.ENV !== 'PRODUCTION'){
     window.onerror = function( message, source, lineno, colno, error ){
       var dataEl;
 
