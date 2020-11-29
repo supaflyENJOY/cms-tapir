@@ -367,7 +367,12 @@ NS.apply = function(a,b) {
 
                         if(!tmp || !tmp.parentNode)
                             return;
+
+                        var isInDOM = D.isInDOM(el);
+                        isInDOM && D._recursiveCmpCall(el, fragment, 'beforeAddToDOM');
                         el.insertBefore(fragment, tmp);
+                        isInDOM && D._recursiveCmpCall(el, {childNodes: list}, 'afterAddToDOM');
+
                     };
                     release = subEl( hookFn );
                     isNotFragment && el.__un.push(release);

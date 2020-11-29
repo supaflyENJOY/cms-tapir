@@ -12,6 +12,8 @@ const fs = require( 'fs' ),
   app = App(),
   {execSync} = require('child_process');
 
+const CACHE_ENABLED = !process.env.DISABLE_CACHE;
+
 require('./util.js');
 global.Observable = require('./src/core/Observer.js');
 process
@@ -76,8 +78,8 @@ var fileReader = require('./src/fileReader.js');
 var paths = {};
 
 var serveScss = require('./src/serve/scss.js');
-serveScss.setCache(cache);
-jsx.setCache(cache);
+serveScss.setCache(cache, !CACHE_ENABLED);
+jsx.setCache(cache, !CACHE_ENABLED);
 app.use('/template', async function(req, res, next){
   var fileName = req.originalUrl;
   var ext = '.'+fileName.split('.').pop();
@@ -119,7 +121,7 @@ var generateServe = function(pathName, useConfig) {
         var code = await jsx.transformJSX(
           (
 
-(useConfig?`const blockConfig = new Store(${JSON.stringify( config )}).bindings(), inheritConfig = (a)=>Object.assign({}, blockConfig, a);`:'')+
+(useConfig?`const blockConfig = new Store(${JSON.stringify( config )}).bindings(), inheritConfig = new ConfigInheriter(blockConfig);`:'')+
 `${blockCode.trim().indexOf( '<' ) === 0 ?
             `var declaration = D.declare("${pathName}/${blockName}", function(input){
 ${useConfig?`input = inheritConfig(input);`:''}return (<>
@@ -142,7 +144,9 @@ ${blockCode}
       } );
       debugger
 console.log( `${pathName}/${blockName}`)
-      cache[ `/${pathName}/${blockName}` + '.map' ] = JSON.stringify( map );
+        if(CACHE_ENABLED) {
+            cache[ `/${pathName}/${blockName}` + '.map' ] = JSON.stringify( map );
+        }
       res.set( 'SourceMap', `/${pathName}/${blockName}` + '.map' );
       res.set( 'Content-type', 'application/javascript; charset=UTF-8' );
 
@@ -154,7 +158,7 @@ console.log( `${pathName}/${blockName}`)
     }
   };
 }
-app.use('/block', generateServe('block'));
+app.use('/block', generateServe('block', true));
 app.use('/component', generateServe('component'));
 app.use('/util', generateServe('util'));
 for(var key in route){
@@ -268,7 +272,7 @@ var map;
         var result = await dependency.result( async function(){
 
           var code = await jsx.transformJSX(
-            ( `const blockConfig = new Store(${JSON.stringify( blockConfig )}).bindings(), inheritConfig = (a)=>Object.assign({}, blockConfig, a);
+            ( `const blockConfig = new Store(${JSON.stringify( blockConfig )}).bindings(), inheritConfig = new ConfigInheriter(blockConfig);
 ${blockCode.trim().indexOf( '<' ) === 0 ?
               `var declaration = D.declare("block/${blockName}", function(input){
 input = inheritConfig(input); return (<>
@@ -289,9 +293,9 @@ ${blockCode}
           return code.code;
 
         } );
-
-        cache[ req.url + '.map' ] = JSON.stringify( map );
-
+if(CACHE_ENABLED) {
+    cache[ req.url + '.map' ] = JSON.stringify( map );
+}
 
         var url = '/' + path.relative( './'+config.template, filename ).replace( /\\/g, '/' )
 

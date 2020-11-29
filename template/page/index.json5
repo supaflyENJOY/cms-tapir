@@ -26,12 +26,11 @@
           {
             name: 'HelloBlock',
             data: {
-              text: 'property value'
+              text: '=theBlock.val'
             }
           },
           { name: 'Layout/Vertical/Vertical',
             data: {
-              text: 'property value',
               blocks: [
                 {
                   name: 'HelloBlock',

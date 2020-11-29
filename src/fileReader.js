@@ -6,6 +6,7 @@ let root = module;
 while(root.parent)
   root = root.parent;
 
+const CACHE_ENABLED = !process.env.DISABLE_CACHE;
 let rootPath = root.path;
 
 const M = module.exports = {
@@ -15,13 +16,14 @@ const M = module.exports = {
   read: async function(filePath, encoding = 'utf-8') {
 
     filePath = M.normalizePath(filePath);
-    if(filePath in fileCache)
-      if(encoding in fileCache[filePath])
-        return
+    if(CACHE_ENABLED) {
+      if( filePath in fileCache )
+        if( encoding in fileCache[ filePath ] )
+          return
 
-    if(fileCache[filePath] instanceof Promise)
-      return fileCache[filePath];
-
+      if( fileCache[ filePath ] instanceof Promise )
+        return fileCache[ filePath ];
+    }
     if(filePath === null)
       debugger
 
@@ -57,12 +59,9 @@ const M = module.exports = {
       tokens = parsed.dir.split(/[\\\/]/).filter(String);
     if(tokens.length){
       if(!(tokens[0] in M._watches)){
-        var watch = require('recursive-watch');
+        var watch = require('./WSL-watch');
         console.log('watch', filePath, tokens[0])
         M._watches[tokens[0]] = watch('./'+tokens[0], function(filename){
-          if(filename.indexOf('_tmp_')>-1 || filename.indexOf('_old__')>-1)
-            return;
-
           M.clearFileCache(filename);
         });
       }

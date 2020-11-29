@@ -7,7 +7,8 @@ const sass = require('node-sass'),
 
 let cache = {};
 module.exports = {
-  setCache: function(theCache) {
+  setCache: function(theCache, useCache) {
+
     cache = theCache;
   },
   serve: async function(fileName, req, res, next) {

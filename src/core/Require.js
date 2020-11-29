@@ -251,7 +251,7 @@ ansispan.foregroundColors = {
           console.log('req')
           define(Math.random()+'_'+block.name, ['block/'+block.name+'.jsx'], function(blockModule) {
             console.log('draw')
-            drawSubBlock(blockModule.default(new Store(block.data || {}).bindings()));
+            drawSubBlock(new blockModule.default(new BlockNamespace(block)));
           });
         }
       }));
@@ -259,5 +259,21 @@ ansispan.foregroundColors = {
   }
   window.inheritConfig = function(a) {
     return a;
+  }
+  var namedBindings;
+  window.BlockNamespace = function(block) {
+    if(!namedBindings) namedBindings = new Store({});
+
+    var bindings = new Store(block.data || {}).bindings();
+    if(block.id){
+      namedBindings.set(block.id, bindings);
+    }
+    return bindings;
+  }
+  window.ConfigInheriter = function(blockConfig) {
+    return function (a){
+      console.log(blockConfig)
+      return Object.assign({}, blockConfig , a);
+    }
   }
 })(window.__Path);
