@@ -59,6 +59,24 @@ NS.apply = function(a,b) {
         on: true, renderto: true, el: true
     };
 
+    var anyTypeClsSetter = function(el, cls) {
+        if(typeof cls === 'function'){
+            cls(setters.cls(el));
+        }else if(typeof cls === 'object' && cls.hook){
+            cls.hook(setters.cls(el));
+        }else if(typeof cls === 'object'){
+
+            var resolvedCls = Array.isArray(cls)?D.cls.apply(D, cls):D.cls(cls);
+            if(typeof resolvedCls === 'function'){
+                resolvedCls(setters.cls(el));
+            }else{
+                setters.cls(el)(resolvedCls);
+            }
+        }else{
+            setters.cls(el)(cls);
+        }
+    };
+
 // ~jsx h function
     var domEl = function( type, cfg ){
         var typeOfType = typeof type;
@@ -101,21 +119,7 @@ NS.apply = function(a,b) {
             }
 
         if( cls ){
-            if(typeof cls === 'function'){
-                cls(setters.cls(el));
-            }else if(typeof cls === 'object' && cls.hook){
-                cls.hook(setters.cls(el));
-            }else if(typeof cls === 'object'){
-
-                var resolvedCls = Array.isArray(cls)?D.cls.apply(D, cls):D.cls(cls);
-                if(typeof resolvedCls === 'function'){
-                    resolvedCls(setters.cls(el));
-                }else{
-                    setters.cls(el)(resolvedCls);
-                }
-            }else{
-                setters.cls(el)(cls);
-            }
+            anyTypeClsSetter(el, cls);
         }
 
         if( style ){
@@ -164,6 +168,20 @@ NS.apply = function(a,b) {
         }
 
         if( renderTo ){
+            if(Array.isArray(renderTo)){
+                var out = [el];
+                for( i = 0, _i = renderTo.length; i < _i; i++ ){
+                    var renderToElement = renderTo[ i ];
+                    if(i === 0){
+                        D.appendChild( renderToElement, el );
+                    }else{
+                        cfg.renderTo = renderToElement;
+                        out.push(domEl.apply(this, arguments));
+                    }
+                }
+                return out;
+            }
+
             D.appendChild( renderTo, el );
         }
 
@@ -186,6 +204,21 @@ NS.apply = function(a,b) {
         tr: null,
         Text: function( val ){ return document.createTextNode( val );}
     };
+    D = NS.D = NS.apply(function( selector, ext ) {
+        var out = [];
+        selector = Array.isArray(selector) ? selector : [selector];
+        for( var i = 0, _i = selector.length; i < _i; i++ ){
+            out = out.concat( selector[i] instanceof Element ? selector[i] : ArraySlice.call( document.querySelectorAll( selector[i] ) ) );
+        }
+        if(arguments.length > 1){
+            for( var i = 0, _i = out.length; i < _i; i++ ){
+                var element = out[ i ];
+                D.ext(element, ext);
+            }
+        }
+        return out;
+    }, D);
+
     'div,template,span,input,label,canvas,span,textarea,table,tr,td,th,tBody,tHead'.split( ',' ).forEach( function( name ){
         D[ name ] = function(){
             return domEl.apply( null, [ name ].concat(ArraySlice.call(arguments)));
@@ -202,7 +235,7 @@ NS.apply = function(a,b) {
       setClassNameSVG = function(el, cls) {
           el.setAttribute( 'class', cls );
       };
-    'svg,path,circle,g,defs,marker,ellipse,animateTransform,mask,rect'.split( ',' ).forEach( function( name ){
+    'svg,path,circle,g,defs,marker,ellipse,animateTransform,linearGradient,mask,rect,stop'.split( ',' ).forEach( function( name ){
         customElementCreate[name] = createElementSVG;
         customElementClassNameSetter[name] = setClassNameSVG;
         D[ name ] = function(cfg){
@@ -223,14 +256,8 @@ NS.apply = function(a,b) {
 
     D.ext = function(el, cfg) {
         cfg.el = el;
-        if(el.className && cfg.cls){
-            if( typeof cfg.cls === 'string' ){
-                cfg.cls += ' '+el.className;
-            }else if(Array.isArray(cfg.cls)){
-                cfg.cls.push(el.className);
-            }else{
-                debugger
-            }
+        if(cfg.cls){
+            anyTypeClsSetter(el, [el.className, cfg.cls])
         }
         return D.div(cfg);
     }
