@@ -52,7 +52,7 @@ const recursiveWalk = function(path, pointer, key, list) {
   },
   recursiveSet = function(path, pointer, key, val, list){
     let subKey,i, originalLength;
-    if( isObject(val) ){
+    if( isObject(val) && !(val instanceof StoreBinding)){
       if(Array.isArray(val)){
 
         if(!Array.isArray(pointer[key])){

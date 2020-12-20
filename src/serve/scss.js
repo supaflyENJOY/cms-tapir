@@ -13,10 +13,20 @@ module.exports = {
   },
   serve: async function(fileName, req, res, next) {
 
-    fileName = dir(fileName);
 
-    var dependency = new fileReader.Dependency(),
-        data = await dependency.read(fileName)
+    var dependency = new fileReader.Dependency(), data;
+
+    try{
+      console.log(fileName)
+      data = await dependency.read(projectDir(fileName));
+      fileName = projectDir(fileName);
+    }catch( e ){
+      fileName = dir(fileName);
+      data = await dependency.read(fileName);
+    }
+
+
+
 
         if(config.scss && config.scss.shared){
           data = `@import '${config.scss.shared}';`+';\n'+data;
@@ -29,9 +39,13 @@ module.exports = {
             if(url[0] === '/'){
               url = url.substr(1);
             }
-            var displayName = path.relative( dir(config.template), path.resolve( path.dirname( prev ), url ) ).replace(/\\/g, '/');
-            var name = path.resolve( path.dirname( prev ), url );
-            var paths = util.path.resolve(url, path.dirname( prev ), [dir(config.template), dir('/')])
+            var displayName = path.relative( projectDir(config.template), path.resolve( path.dirname( prev ), url ) ).replace(/\\/g, '/');
+            var name = path.resolve( path.dirname( prev ), url ),
+                prevDir = path.dirname( prev ),
+                dirsToSearch = [projectDir(config.template), prevDir, dir(config.template), projectDir('/'), dir('/')]
+            ;
+
+            var paths = util.path.resolve(url, prevDir, dirsToSearch);
             ;(async function() {
               for( var i = 0, _i = paths.length; i < _i; i++ ){
                 try{

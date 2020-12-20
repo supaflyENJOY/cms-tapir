@@ -17,14 +17,14 @@ var transformJSX = function(code, fileName, dependency, realPath, cb) {
     code,
     {
       "plugins": [
-        [ "@babel/plugin-transform-react-jsx", {
+        [ require("@babel/plugin-transform-react-jsx"), {
           "pragma": "D.h", // default pragma is React.createElement
           "pragmaFrag": "D.f", // default is React.Fragment
           "throwIfNamespace": false // defaults to true
         } ],
         //[simpleTransformToAMD]
         [importExtractor.plugin],
-        ['@babel/plugin-transform-modules-amd']
+        [require('@babel/plugin-transform-modules-amd')]
       ],
       sourceMaps: useSourceMaps,
       sourceFileName: fileName,

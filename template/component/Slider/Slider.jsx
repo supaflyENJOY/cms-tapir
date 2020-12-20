@@ -87,6 +87,10 @@ var Slider = new Component({
     this.getBound();
     this.updateUI();
   },
+  afterLayoutUpdate: function() {
+    this.getBound();
+    this.updateUI();
+  },
   bound: null,
   _updateRequested: false,
   _updateUI: function() {

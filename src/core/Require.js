@@ -237,7 +237,7 @@ ansispan.foregroundColors = {
   window.define.definitions = definitions;
   window.define.waiting = waiting;
 
-  window.RenderBlocks = function(blocks) {
+  window.RenderBlocks = function(blocks, callback) {
     if(blocks === void 0 || blocks === null){
       blocks = [];
     }else if(Array.isArray(blocks)){
@@ -245,13 +245,25 @@ ansispan.foregroundColors = {
     }else{
       blocks = blocks.array();
     }
+    var uid = 0;
+    var resolved = [];
     return function(draw) {
       draw(blocks.map(function(block) {
         return function(drawSubBlock) {
-          console.log('req')
+          var subUid = uid;
+          uid++;
           define(Math.random()+'_'+block.name, ['block/'+block.name+'.jsx'], function(blockModule) {
-            console.log('draw')
-            drawSubBlock(new blockModule.default(new BlockNamespace(block)));
+
+            // rendered block
+            var something = new blockModule.default(new BlockNamespace(block));
+
+            drawSubBlock(something);
+            resolved[subUid] = something || true;
+            for(var i = 0, _i = blocks.length; i < _i; i++){
+              if(!resolved[i])
+                return;
+            }
+            callback && callback(resolved);
           });
         }
       }));
@@ -266,10 +278,15 @@ ansispan.foregroundColors = {
 
     var bindings = new Store(block.data || {}).bindings();
     if(block.id){
+      debugger
       namedBindings.set(block.id, bindings);
+      console.log(namedBindings)
     }
+
+
     return bindings;
   }
+
   window.ConfigInheriter = function(blockConfig) {
     return function (a){
       console.log(blockConfig)

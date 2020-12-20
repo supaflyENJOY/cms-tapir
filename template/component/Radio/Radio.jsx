@@ -1,4 +1,4 @@
-import {Component} from 'cmp/Component.jsx';
+import {Component} from '../Component.jsx';
 
 var Radio = new Component({
   ctor: function(cfg) {
