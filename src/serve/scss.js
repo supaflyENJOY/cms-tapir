@@ -15,17 +15,23 @@ module.exports = {
 
 
     var dependency = new fileReader.Dependency(), data;
+    var dirsToSearch = [projectDir(config.template), dir(config.template), projectDir('/'), dir('/')]
+    var paths = util.path.resolve(fileName, projectDir(config.template), dirsToSearch);
 
-    try{
-      console.log(fileName)
-      data = await dependency.read(projectDir(fileName));
-      fileName = projectDir(fileName);
-    }catch( e ){
-      fileName = dir(fileName);
-      data = await dependency.read(fileName);
+    var data;
+    for( var i = 0, _i = paths.length; i < _i; i++ ){
+      try{
+        console.log( fileName )
+        data = await dependency.read( paths[ i ] );
+        fileName = paths[ i ];
+      }catch( e ){
+        continue;
+      }
     }
 
-
+    if(!data){
+      throw new Error( `No file ${fileName}` )
+    }
 
 
         if(config.scss && config.scss.shared){
@@ -36,6 +42,7 @@ module.exports = {
           file: fileName,//path.join( __dirname, dir, req.url ),
           sourceMap: useSourceMaps,
           importer: function( url, prev, done ){ //file, prev, done
+            console.log(url)
             if(url[0] === '/'){
               url = url.substr(1);
             }

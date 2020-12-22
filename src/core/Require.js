@@ -137,7 +137,7 @@ ansispan.foregroundColors = {
       if(fileName.indexOf('Fields')>-1)debugger
       console.log('kkk',a,b,c)
     };
-    script.setAttribute( 'src', script.src = fileName );
+    script.setAttribute( 'src', script.src = '/'+fileName );
     head.appendChild( script );
     if(!window.allLoaded.js[fileName]){
       window.allLoaded.js[ fileName ] = true;

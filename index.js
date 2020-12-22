@@ -33,16 +33,26 @@ serveScss.setCache(cache, !CACHE_ENABLED);
 jsx.setCache(cache, !CACHE_ENABLED);
 app.use('/template', async function(req, res, next){
   var fileName = req.originalUrl;
-  var ext = '.'+fileName.split('.').pop();
+  var ext = '.'+fileName.split('.').pop(),
+      error = false;
 
   if(ext === '.svg'){
-    await serveSVG.serve(fileName, req, res, next);
+    try{
+      await serveSVG.serve( fileName, req, res, next );
+    }catch(e){
+      error = true;
+    }
   }else if(ext === '.scss'){
-    await serveScss.serve(fileName, req, res, next)
-
+    try{
+      await serveScss.serve( fileName, req, res, next )
+    }catch(e){
+      error = true;
+    }
   }else{
-    next();
+    error = true;
   }
+  if(error)
+    next();
 });
 
 
@@ -66,6 +76,7 @@ app.disable('x-powered-by');
 const dir = global.dir = function(...args) {
   return path.join.apply(path, [__dirname, ...args]);
 };
+dir.path = __dirname;
 
 let appScope = {env: {}};
 
@@ -96,6 +107,7 @@ CMS.prototype = {
     const projectDir = global.projectDir  = function(...args) {
       return path.join.apply(path, [base, ...args]);
     };
+    projectDir.path = base;
 
     const R = new App.Router,
       Tapir = require('api-tapir'),
@@ -359,7 +371,39 @@ ${blockCode}
       doUpdate();
     });
 
-    app.listen(PORT, HOST);
+    const http = require('http');
+    const https = require('https');
+
+    try{
+      //app.listen( APP_PORT );
+      const httpServer = http.createServer(app);
+
+      if(env.USE_HTTPS) {
+        const privateKey = fs.readFileSync('/etc/letsencrypt/live/'+env.USE_HTTPS+'/privkey.pem', 'utf8');
+        const certificate = fs.readFileSync('/etc/letsencrypt/live/'+env.USE_HTTPS+'/cert.pem', 'utf8');
+        const ca = fs.readFileSync('/etc/letsencrypt/live/'+env.USE_HTTPS+'/chain.pem', 'utf8');
+
+        const credentials = {
+          key: privateKey,
+          cert: certificate,
+          ca: ca
+        };
+        const httpsServer = https.createServer(credentials, app);
+
+
+        httpsServer.listen(443, () => {
+          console.log('HTTPS Server running on port 443');
+        });
+      }
+
+      httpServer.listen(PORT, () => {
+        console.log('HTTP Server running on port '+PORT);
+      });
+
+
+    }catch(e){
+      console.error(e.message);
+    }
 
     console.log(`Tapir-CMS ENV: ${env.ENV}`);
     console.log(`Tapir-CMS LISTEN: http://${HOST}:${PORT}`);
