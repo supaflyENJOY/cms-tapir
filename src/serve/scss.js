@@ -32,28 +32,28 @@ module.exports = {
     if(!data){
       throw new Error( `No file ${fileName}` )
     }
-
-
-        if(config.scss && config.scss.shared){
-          data = `@import '${config.scss.shared}';`+';\n'+data;
+    var result = await dependency.result(function() {
+      return new Promise(function(resolve, reject){
+        if( config.scss && config.scss.shared ){
+          data = `@import '${config.scss.shared}';` + ';\n' + data;
         }
         sass.render( {
           data: data,
           file: fileName,//path.join( __dirname, dir, req.url ),
           sourceMap: useSourceMaps,
           importer: function( url, prev, done ){ //file, prev, done
-            console.log(url)
-            if(url[0] === '/'){
-              url = url.substr(1);
+            console.log( url )
+            if( url[ 0 ] === '/' ){
+              url = url.substr( 1 );
             }
-            var displayName = path.relative( projectDir(config.template), path.resolve( path.dirname( prev ), url ) ).replace(/\\/g, '/');
+            var displayName = path.relative( projectDir( config.template ), path.resolve( path.dirname( prev ), url ) ).replace( /\\/g, '/' );
             var name = path.resolve( path.dirname( prev ), url ),
-                prevDir = path.dirname( prev ),
-                dirsToSearch = [projectDir(config.template), prevDir, dir(config.template), projectDir('/'), dir('/')]
+              prevDir = path.dirname( prev ),
+              dirsToSearch = [ projectDir( config.template ), prevDir, dir( config.template ), projectDir( '/' ), dir( '/' ) ]
             ;
 
-            var paths = util.path.resolve(url, prevDir, dirsToSearch);
-            ;(async function() {
+            var paths = util.path.resolve( url, prevDir, dirsToSearch );
+            ;( async function(){
               for( var i = 0, _i = paths.length; i < _i; i++ ){
                 try{
                   var fileData = await dependency.read( paths[ i ] );
@@ -69,17 +69,28 @@ module.exports = {
 
                 }
               }
-              done(new Error(`Can not resolve dependency ${url} for ${prev}!`));
-            })();
+              done( new Error( `Can not resolve dependency ${url} for ${prev}!` ) );
+            } )();
           }
         }, function( err, result ){
           if( err ){
+
             const errorText = `Error at ${err.file}:\n` + err.formatted;
-            return res.end( errorText )
+            return resolve({error: true, data: errorText});
           }
-          res.set( 'Content-type', 'text/css; charset=UTF-8' );
-          res.end( result.css )
+          resolve({error: false, data: result.css});
         } );
+      });
+    });
+
+    if(result.error){
+      res.end( result.data );
+    }else{
+      res.set( 'Content-type', 'text/css; charset=UTF-8' );
+      res.end( result.data )
+    }
+
+
 
   }
 }
