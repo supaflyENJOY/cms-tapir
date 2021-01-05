@@ -30,6 +30,8 @@ var transformJSX = function(code, fileName, dependency, realPath, cb) {
       sourceFileName: fileName,
       moduleId: fileName
     }, async function( c, d, e ){
+      importExtractor
+      debugger
       if(c){
         cacheCode[code] = {error: new Error(c.message)};
         cb(cacheCode[code].error);
