@@ -33,9 +33,7 @@
   "scripts": {
     "start": "node index.js",
     "test": "mocha",
-    "build": "node build.js",
-    "serve-production": "node buildServe.js",
-    "webpack": "webpack"
+    "build": "node build.js"
   },
   "devDependencies": {
 

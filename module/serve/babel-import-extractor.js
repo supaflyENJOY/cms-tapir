@@ -22,6 +22,7 @@ class BabelPluginExtractImportNames {
               Literal(path) {
                 if (path.key === 'source') {
                   item.from = path.node.value;
+                  item.fromLocation = path.node.loc;
                 }
               }
             })

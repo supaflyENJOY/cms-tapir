@@ -1,5 +1,6 @@
 const fs = require( 'fs' ),
-  path = require('path');
+  path = require('path'),
+  Dir = require('../dir.js');
 
 const fileCache = {};
 let root = module;
@@ -10,12 +11,17 @@ const CACHE_ENABLED = !process.env.DISABLE_CACHE;
 let rootPath = root.path;
 
 const M = module.exports = {
-  Dependency: function() {
+  Dependency: function(file) {
     this.files = [];
+    var filePath = file instanceof Dir.File ? file.path : file;
+    if(filePath)
+      this.files.push(filePath);
   },
-  read: async function(filePath, encoding = 'utf-8') {
+  read: async function(file, encoding = 'utf-8') {
 
-    filePath = M.normalizePath(filePath);
+    //filePath = M.normalizePath(filePath);
+    var filePath = file instanceof Dir.File ? file.path : file;
+
     if(CACHE_ENABLED) {
       if( filePath in fileCache )
         if( encoding in fileCache[ filePath ] )
@@ -24,17 +30,17 @@ const M = module.exports = {
       if( fileCache[ filePath ] instanceof Promise )
         return fileCache[ filePath ];
     }
-    if(filePath === null)
+    if(file === null)
       debugger
 
     fileCache[filePath] = new Promise(function(resolve, reject) {
-      M.watch(filePath);
-      fs.stat(util.path.getOsPath(filePath), function(err, data) {
+      M.watch(file);
+      fs.stat(filePath, function(err, data) {
         if(err){
           fileCache[filePath] = {error: new Error(err.message)};
           return reject( fileCache[filePath].error );
         }
-        fs.readFile(util.path.getOsPath(filePath), function(err, data) {
+        fs.readFile(filePath, function(err, data) {
           if(err){
             fileCache[filePath] = {error: new Error(err.message)};
             return reject( fileCache[filePath].error );
@@ -50,18 +56,25 @@ const M = module.exports = {
     return fileCache[filePath];
   },
   normalizePath: function(thePath) {
-    const parsed = path.parse(path.relative(rootPath, thePath))
+    var parsed;
+    if(thePath instanceof Dir.File){
+      parsed = path.parse(path.join(thePath.dir.path));
+    }else{
+      parsed = path.parse(path.relative(rootPath, thePath))
+    }
+
     return path.posix.join(parsed.dir.split(/[\\\/]/).join(path.posix.sep), parsed.base);
   },
   _watches: {},
-  watch: function(filePath) {
-    const parsed = path.parse(M.normalizePath(filePath)),
-      tokens = parsed.dir.split(/[\\\/]/).filter(String);
-    if(tokens.length){
-      if(!(tokens[0] in M._watches)){
+  watch: function(file) {
+    var dir = file.dir.path;
+    //const parsed = path.parse(M.normalizePath(filePath));//,
+      //tokens = parsed.dir.split(/[\\\/]/).filter(String);
+    if(dir){
+      if(!(dir in M._watches)){
         var watch = require('./WSL-watch');
-        console.log('watch', filePath, tokens[0])
-        M._watches[tokens[0]] = watch('./'+tokens[0], function(filename){
+        console.log('watch', dir)
+        M._watches[dir] = watch(dir, function(filename){
           M.clearFileCache(filename);
         });
       }
@@ -107,11 +120,12 @@ const dependencyCache = {},
 
 
 M.Dependency.prototype = {
-  read: async function(filePath, encoding = 'utf-8') {
-    filePath = M.normalizePath(filePath);
-    this.files.push(filePath);
+  read: async function(file, encoding = 'utf-8') {
+    var filePath = file instanceof Dir.File ? file.path : file;
+    //filePath = M.normalizePath(filePath);
+    this.files.push(file);
 
-    return await M.read(filePath, encoding);
+    return await M.read(file, encoding);
   },
   result: async function(fn) {
     const filesToken = this.files.sort().join('*');

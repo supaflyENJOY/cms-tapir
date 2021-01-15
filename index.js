@@ -1,7 +1,7 @@
 require('dotenv').config();
 const fs = require( 'fs' ),
   path = require('path'),
-  util = require('util'),
+
   JSON5 = require('json5'),
 
   env = process.env,
@@ -12,10 +12,12 @@ const fs = require( 'fs' ),
   app = App(),
   {execSync} = require('child_process');
 
+require('./util.js');
+
 const CACHE_ENABLED = !process.env.DISABLE_CACHE;
 const useSourceMaps = env.ENV === 'DEVELOP';
 
-var jsx = require('./src/transform/jsx.js');
+//var jsx = require('./src/transform/jsx.js');
 
 var cache = {};
 var lives = [];
@@ -25,12 +27,12 @@ var fileReader = require('./src/fileReader.js');
 
 var paths = {};
 
-var serveSVG = require('./src/serve/svg.js');
+/*var serveSVG = require('./src/serve/svg.js');
 serveSVG.setCache(cache, !CACHE_ENABLED);
 
 var serveScss = require('./src/serve/scss.js');
 serveScss.setCache(cache, !CACHE_ENABLED);
-jsx.setCache(cache, !CACHE_ENABLED);
+jsx.setCache(cache, !CACHE_ENABLED);*/
 app.use('/template', async function(req, res, next){
   var fileName = req.originalUrl;
   var ext = '.'+fileName.split('.').pop(),
@@ -58,7 +60,7 @@ app.use('/template', async function(req, res, next){
 
 
 global.Observable = require('./src/core/Observer.js');
-process
+/*process
   .on('unhandledRejection', (reason, p) => {
     debugger
     console.error(reason, 'Unhandled Rejection at Promise', p);
@@ -69,11 +71,12 @@ process
     console.error(err, 'Unhandled Rejection at Promise', p);
 
     //fs.appendFileSync(path.join(__dirname,'tmp/log'), new Date().toISOString()+'\n'+err.stack+'\n\n');
-  });
+  });*/
 
 app.disable('x-powered-by');
 
 const dir = global.dir = function(...args) {
+  if([...args][0] === void 0 )debugger
   return path.join.apply(path, [__dirname, ...args]);
 };
 dir.path = __dirname;
@@ -84,7 +87,7 @@ let commit, commitNUMBER, lastUpdateNumber;
 const updateCommitInfo = function() {
   try{
     commit = execSync( 'git rev-parse HEAD' ).toString().trim();
-    if( !lastUpdateNumber || lastUpdateNumber + 45000 < +new Date() ){
+    if( !lastUpdateNumber || (lastUpdateNumber + 120000 < +new Date()) ){
       lastUpdateNumber = +new Date()
       commitNUMBER = execSync( 'git rev-list --count HEAD' ).toString().trim();
       appScope.env.commit = commitNUMBER;
@@ -93,16 +96,46 @@ const updateCommitInfo = function() {
     console.error('This project is not a git repository')
   }
 };
-updateCommitInfo();
+var Dir = require('./dir');
 
+updateCommitInfo();
 var CMS = function(cfg) {
-  Object.assign(this, cfg);
+  util.deepAssign(this, {config: this.normalizePaths(this.defaultConfig())});
+  util.deepAssign(this, {config: this.normalizePaths(cfg.config)});
+  this.modules = [];
+  this.modulesHash = {};
   this.init();
 };
 CMS.prototype = {
+  defaultConfig: ()=> Object.assign(require('./config/config.js'), {base: __dirname}),
+  normalizePaths: function(cfg) {
+    var copy = {...cfg};
+    !(Array.isArray(copy.static)) && (copy.static = [copy.static]);
+    copy.static = copy.static.slice();
+    copy.static = copy.static.map(item => new Dir(copy.base || __dirname, item));
+
+    !(Array.isArray(copy.template)) && (copy.template = [copy.template]);
+    copy.template = copy.template.slice();
+    copy.template = copy.template.map(item => new Dir(copy.base || __dirname, item));
+    return copy;
+  },
   init: function() {
+
+    var actual = this.actual = {
+      PORT: this.config.port || PORT,
+      HOST: this.config.host || HOST,
+      USE_HTTPS: this.config.useHttps || env.USE_HTTPS,
+    };
     var base = this.base || __dirname;
-    require('./util.js')(base);
+
+
+    for(var moduleName in this.config.modules){
+      if(this.config.modules[moduleName]){
+        moduleName = moduleName.replace(/[^a-zA-Z_\-0-9]/g,'');
+        var module = require('./module/'+moduleName+'.js')
+        new module(this);
+      }
+    }
 
     const projectDir = global.projectDir  = function(...args) {
       return path.join.apply(path, [base, ...args]);
@@ -256,14 +289,11 @@ ${blockCode}
 //app.use(compression());
 
     app.use(R);
-    config.static.forEach(dirName => {
-      console.log('STATIC: ', dir(dirName))
-      console.log('STATIC: ', dirName)
-      app.use(App.static(dirName));
-      app.use(App.static(dir(dirName)));
+    config.static.forEach(dir => {
+      console.log('STATIC: ', dir.path)
+      app.use(App.static(dir.path));
     });
     //debugger
-    app.use(App.static(dir('./src')));
 
     app.use('/', function(req, res, next){
       //console.log( req.originalUrl )
@@ -371,44 +401,34 @@ ${blockCode}
       doUpdate();
     });
 
-    const http = require('http');
-    const https = require('https');
-
-    try{
-      //app.listen( APP_PORT );
-      const httpServer = http.createServer(app);
-
-      if(env.USE_HTTPS) {
-        const privateKey = fs.readFileSync('/etc/letsencrypt/live/'+env.USE_HTTPS+'/privkey.pem', 'utf8');
-        const certificate = fs.readFileSync('/etc/letsencrypt/live/'+env.USE_HTTPS+'/cert.pem', 'utf8');
-        const ca = fs.readFileSync('/etc/letsencrypt/live/'+env.USE_HTTPS+'/chain.pem', 'utf8');
-
-        const credentials = {
-          key: privateKey,
-          cert: certificate,
-          ca: ca
-        };
-        const httpsServer = https.createServer(credentials, app);
-
-
-        httpsServer.listen(443, () => {
-          console.log('HTTPS Server running on port 443');
-        });
-      }
-
-      httpServer.listen(PORT, () => {
-        console.log('HTTP Server running on port '+PORT);
-      });
-
-
-    }catch(e){
-      console.error(e.message);
-    }
 
     console.log(`Tapir-CMS ENV: ${env.ENV}`);
-    console.log(`Tapir-CMS LISTEN: http://${HOST}:${PORT}`);
 
   },
-
+  registerModule: function(name, module) {
+    this.modules.push({name, module});
+    this.modulesHash[name] = module;
+    module.init();
+    if(module.expose)
+      module.expose.forEach(name =>{
+        this[name] = (...args) => module[name](...args);
+      });
+  },
+  getModule: function(name) {
+    return this.modulesHash[name];
+  },
+  '~destroy': function(cb) {
+    Promise.all(this.modules.map(function({module}) {
+      return new Promise(function(resolve, reject) {
+        if(module['~destroy']){
+          module['~destroy'](resolve);
+        }else{
+          resolve();
+        }
+      });
+    })).then(function() {
+      cb && cb();
+    })
+  }
 };
 module.exports = CMS;
