@@ -44,8 +44,8 @@ module.exports = {
               [ require( '@babel/plugin-transform-modules-amd' ) ]
             ],
             sourceMaps: useSourceMaps,
-            sourceFileName: file.subPath,
-            moduleId: file.subPath
+            sourceFileName: util.path.normalize(file.subPath),
+            moduleId: util.path.normalize(file.subPath)
           }, function( err, result ){
             if( err ){
               //res._log('!Error in transforming svg', err);

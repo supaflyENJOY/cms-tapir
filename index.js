@@ -10,7 +10,8 @@ const fs = require( 'fs' ),
   PORT = env.PORT || 7373,
   App = require('express'),
   app = App(),
-  {execSync} = require('child_process');
+  {execSync} = require('child_process'),
+  Observable = require('./src/core/Observer.js');
 
 require('./util.js');
 
@@ -100,23 +101,27 @@ var Dir = require('./dir');
 
 updateCommitInfo();
 var CMS = function(cfg) {
-  util.deepAssign(this, {config: this.normalizePaths(this.defaultConfig())});
-  util.deepAssign(this, {config: this.normalizePaths(cfg.config)});
+  Observable.call(this);
+  util.deepAssign(this, {config: this.normalizePaths(this.defaultConfig(), __dirname)});
+  util.deepAssign(this, {config: this.normalizePaths(cfg.config, cfg.base)});
+
+  this.routes = Object.assign({}, cfg.routes);
   this.modules = [];
   this.modulesHash = {};
+  this.scope = appScope;
   this.init();
 };
 CMS.prototype = {
-  defaultConfig: ()=> Object.assign(require('./config/config.js'), {base: __dirname}),
-  normalizePaths: function(cfg) {
+  defaultConfig: ()=> Object.assign({}, require('./config/config.js')),
+  normalizePaths: function(cfg, base) {
     var copy = {...cfg};
     !(Array.isArray(copy.static)) && (copy.static = [copy.static]);
     copy.static = copy.static.slice();
-    copy.static = copy.static.map(item => new Dir(copy.base || __dirname, item));
+    copy.static = copy.static.map(item => new Dir(base || __dirname, item));
 
     !(Array.isArray(copy.template)) && (copy.template = [copy.template]);
     copy.template = copy.template.slice();
-    copy.template = copy.template.map(item => new Dir(copy.base || __dirname, item));
+    copy.template = copy.template.map(item => new Dir(base || __dirname, item));
     return copy;
   },
   init: function() {
@@ -153,6 +158,19 @@ CMS.prototype = {
     this.api = api;
     var config = global.config = this.config;
     var route = this.route;
+
+
+    var app = this.app = App()
+    app.use(this.getModule('Serve').middleware);
+
+    config.static.forEach(dir => {
+      console.log('STATIC: ', dir.path)
+      app.use(App.static(dir.path));
+    });
+
+    this.fire('afterInit');
+
+    return ;
     var generateServe = function(pathName, useConfig) {
       return async function(req, res, next){
         if(req.originalUrl.match(/\.scss?$/)!==null){
@@ -431,4 +449,6 @@ ${blockCode}
     })
   }
 };
+Object.assign(CMS.prototype, Observable.prototype)
+
 module.exports = CMS;

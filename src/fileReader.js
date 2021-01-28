@@ -18,28 +18,38 @@ const M = module.exports = {
       this.files.push(filePath);
   },
   read: async function(file, encoding = 'utf-8') {
-
+    var data;
+    if(typeof file === 'object' && !(file instanceof Dir.File)){
+      data = file.data;
+      file = file.file;
+    }
     //filePath = M.normalizePath(filePath);
     var filePath = file instanceof Dir.File ? file.path : file;
 
     if(CACHE_ENABLED) {
       if( filePath in fileCache )
         if( encoding in fileCache[ filePath ] )
-          return
+          return false;
 
       if( fileCache[ filePath ] instanceof Promise )
-        return fileCache[ filePath ];
+        return fileCache[filePath].error ? false : fileCache[filePath].data;
     }
     if(file === null)
       debugger
 
-    fileCache[filePath] = new Promise(function(resolve, reject) {
-      M.watch(file);
+    await new Promise(function(resolve, reject) {
+      if(data){
+        fileCache[filePath] = {error: false, data: data.toString(encoding)}
+        return resolve( data );
+      }
+
       fs.stat(filePath, function(err, data) {
+
         if(err){
           fileCache[filePath] = {error: new Error(err.message)};
           return reject( fileCache[filePath].error );
         }
+        M.watch(file);
         fs.readFile(filePath, function(err, data) {
           if(err){
             fileCache[filePath] = {error: new Error(err.message)};
@@ -53,7 +63,7 @@ const M = module.exports = {
 
     });
 
-    return fileCache[filePath];
+    return fileCache[filePath].error ? false : fileCache[filePath].data;
   },
   normalizePath: function(thePath) {
     var parsed;
@@ -75,7 +85,7 @@ const M = module.exports = {
         var watch = require('./WSL-watch');
         console.log('watch', dir)
         M._watches[dir] = watch(dir, function(filename){
-          M.clearFileCache(filename);
+          M.clearFileCache(file, filename);
         });
       }
     }
@@ -100,12 +110,12 @@ const M = module.exports = {
     }
     M._waitForCacheClear = {};
   },
-  clearFileCache: function(fileName) {
-    var file = M.normalizePath(fileName);
+  clearFileCache: function(file, fileName) {
+    //var file = M.normalizePath(fileName);
 
-    M.fire('update', file);
+    M.fire('update', fileName);
 
-    M._waitForCacheClear[file] = true;
+    M._waitForCacheClear[fileName] = true;
     if(!M._waitingForCacheClear)
       M._waitingForCacheClear = setTimeout(M._clearFileCache, 100);
   }
@@ -123,7 +133,7 @@ M.Dependency.prototype = {
   read: async function(file, encoding = 'utf-8') {
     var filePath = file instanceof Dir.File ? file.path : file;
     //filePath = M.normalizePath(filePath);
-    this.files.push(file);
+    this.files.push(filePath);
 
     return await M.read(file, encoding);
   },

@@ -6,54 +6,32 @@ var fileReader = require('./src/fileReader.js');
 const util = module.exports =  global.util = {
   root: __dirname,
   path: {
+    normalize: function(path) {
+      if(path instanceof Dir || path instanceof Dir.File){
+        path = path.path;
+      }
+      return path.split(/[\\\/]/).join('/');
+    },
     resolve: async function( filePath, prevFile, dirs ){
-
       var data, file;
-      if(filePath[0] === '.'){
+      if(prevFile && filePath[0] === '.'){
         file = prevFile.dir.clone().file(path.join(prevFile.subDir, filePath))
         try{
           data = await fileReader.read( file )
-          return file;
+          return {file, data};
         }catch(e){ }
-      }else if(filePath[0] === '/'){
+      }else{
         for( var i = 0, _i = dirs.length; i < _i; i++ ){
           try{
             file = dirs[i].file(filePath)
             data = await fileReader.read( file );
             console.log('match', file.path)
-            return file
-            break;
+            return {file, data};
           }catch( e ){ }
         }
       }
 
       return false;
-
-      path.join(prevFile.dir.path,prevFile.subDir, filePath)
-      debugger
-      if( filePath[ 0 ] === '/' ){
-        return [ path.relative( util.root, path.join( util.root, filePath.substr( 1 ) ) ) ];
-      }else{
-        if( filePath[ 0 ] === '.' ){
-          var relative = path.posix.join( path.parse( prev ).dir, filePath );
-
-          return [ path.relative( util.root, relative ) ]
-        }
-
-        const possible = [];
-        for( var i = 0, _i = dirs.length; i < _i; i++ ){
-
-          /*if(filePath.match(/^src\//) && dirs[ i ].match(/[\\\/]template$/))
-						continue*/
-
-          var possibility = path.join( dirs[ i ], filePath );
-
-          if( path.relative( util.root, possibility )[ 0 ] === '.' )
-            continue;
-          possible.push( possibility );
-        }
-        return possible;
-      }
     },
     getDisplayName: function( filePath ){
       console.log( filePath );

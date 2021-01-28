@@ -37,7 +37,7 @@ var createTapir = function(done) {
 				shared: '/src/shared.scss'
 			}*/
 		},
-		route: {
+		routes: {
 			'/': {page: 'main'}
 		},
 		base: __dirname

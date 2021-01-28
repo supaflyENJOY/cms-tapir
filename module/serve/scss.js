@@ -31,6 +31,8 @@ module.exports = {
     }else{
       dependency = new fileReader.Dependency(file);
     }
+
+    var baseFile = file;
     var result = await dependency.result(async function(){
       return await (new Promise( function( resolve, reject ){
 
@@ -39,21 +41,23 @@ module.exports = {
         }
         sass.render( {
           data: code,
-          file: file.subPath,//path.join( __dirname, dir, req.url ),
+          file: util.path.normalize(file.subPath),//path.join( __dirname, dir, req.url ),
           sourceMap: useSourceMaps,
           importer: function( url, prev, done ){ //file, prev, done
             ;(async function(){
 
-              var dependencyFile = await util.path.resolve( url, file, config.template.slice().concat( config.static ) );
-
-              if( dependencyFile ){
-                var fileData = await dependency.read( dependencyFile );
+              var {file, data} = await util.path.resolve( url, baseFile, config.template.slice().concat( config.static ) );
+              if(!file && url[0] !== '.'){
+                var {file, data} = await util.path.resolve( './'+url, baseFile, config.template.slice().concat( config.static ) );
+              }
+              if( file ){
+                var fileData = await dependency.read( {file, data} );
                 done( {
                   contents: fileData,
-                  file: dependencyFile.subPath
+                  file: util.path.normalize(file.subPath)
                 } );
               }else{
-                console.error(`ERROR SCSS: can not resolve ${url} from ${file.path}!`)
+                console.error(`ERROR SCSS: can not resolve ${url} from ${baseFile.path}!`)
                 done( new Error( `Can not resolve dependency ${url} for ${prev}!` ) );
               }
             })();

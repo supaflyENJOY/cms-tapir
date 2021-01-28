@@ -12,8 +12,10 @@ Server.prototype = {
 		const sockets = this.sockets;
 
 		try{
-			const httpServer = this.httpServer = http.createServer(this.main.app);
-
+			const httpServer = this.httpServer = http.createServer();
+			this.main.on('afterInit', function() {
+				httpServer.on('request', this.app);
+			});
 			if(actual.USE_HTTPS) {
 				const https = require('https');
 				const privateKey = fs.readFileSync('/etc/letsencrypt/live/'+actual.USE_HTTPS+'/privkey.pem', 'utf8');
