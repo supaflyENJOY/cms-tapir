@@ -162,9 +162,12 @@ CMS.prototype = {
 
 
     var app = this.app = App()
+
+    app.use(compression());
+
+
     app.use(this.getModule('Serve').middleware);
-    
-    
+
     config.static.forEach(dir => {
       console.log('STATIC: ', dir.path)
       app.use(App.static(dir.path));

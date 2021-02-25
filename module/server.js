@@ -38,6 +38,9 @@ Server.prototype = {
 				httpsServer.listen(443, function(){
 					console.log('Tapir-CMS HTTPS Server running on port 443');
 				});
+				this.main.on('afterInit', function() {
+					httpsServer.on('request', this.app);
+				});
 			}
 
 			httpServer.on('connection', function(socket){
