@@ -10,6 +10,8 @@ var bCore = require( "@babel/core" ),
 let cache = {};
 
 var jsx = require('./jsx.js');
+var cachedCache = {};
+const { minify } = require("terser");
 
 module.exports = {
   setCache: function(theCache) {
@@ -31,8 +33,53 @@ module.exports = {
 		var js = await jsx.serve(file, code);
 		var config = {};
 		if(htmlData && (js && !js.error)){
+			var cachedBundle = '';
+			if(additional.route.cache){
+				var cacheLine = additional.route.cache.join(';;');
+				if(cacheLine in cachedCache){
+					cachedBundle = cachedCache[cacheLine];
+				}else{
+					var all = await Promise.all( additional.route.cache.map( async function( name ){
+						try{
+							return await additional.main.serve( name )
+						}catch( e ){
+							return false;
+						}
+					} ) );
+					try{
+						cachedCache[ cacheLine ] = cachedBundle = ( await minify( all.reverse().filter( a => a ).map( a => a.data.code ).join( ';' ) ) ).code;
+					}catch(e){
+						console.error('Cache minification error')
+					}
+				}
+			}
+			var cachedScripts = '';
+
+			if(additional.main.config.scripts){
+				var cacheScriptsFileName = `/__cache${file.subPath.replace(/[\\\/]/g, '_')}.js`;
+				if(!additional.main.isStatic(cacheScriptsFileName)){
+					cacheLine = additional.main.config.scripts.join( ';;' )
+					var all = await Promise.all( additional.main.config.scripts.map( async function( name ){
+						try{
+							return await additional.main.complexServe( name )
+						}catch( e ){
+							return false;
+						}
+					} ) );
+					try{
+						additional.main.setStatic( cacheScriptsFileName, ( await minify( all.filter( a => a ).map( a => a.data.code ).join( ';' ) ) ).code )
+						//cachedCache[ cacheLine ] = cachedScripts = ;
+						cachedScripts = `<script src="${cacheScriptsFileName}"></script>`;
+					}catch( e ){
+						console.error( 'Cache minification error', e )
+					}
+				}else{
+					cachedScripts = `<script src="${cacheScriptsFileName}"></script>`;
+				}
+			}
 			var inputs = Object.assign({}, additional.scope, {
-				pageCode: js.data.code+`
+				scripts: cachedScripts,
+				pageCode: cachedBundle+js.data.code+`
     define('start', ['${util.path.normalize(file.subPath)}'], function(main) {
       D.appendChild(document.body, main.default(
         new Store(${JSON.stringify(config)}).bindings()

@@ -4,6 +4,7 @@ var fileReader = require('../src/fileReader.js');
 const serves = require('./serve/all.js');
 
 const staticCache = {};
+const fetch = require("node-fetch");
 
 var Serve = function(main) {
 	this.main = main;
@@ -11,7 +12,32 @@ var Serve = function(main) {
 	main.registerModule('Serve', this);
 };
 Serve.prototype = {
-	expose: ['serve'],
+	expose: ['serve', 'complexServe', 'setStatic', 'isStatic'],
+	complexServe: async function(fileName, cb) {
+		if(fileName.match(/^https?:/)){
+			const url = fileName;
+
+
+			try {
+				const response = await fetch(url);
+				return {data: {code: (await response.buffer()).toString('utf-8')}};
+				console.log(json);
+			} catch (error) {
+				console.log(error);
+			}
+
+
+			return
+		}else{
+			var { file, data } = await util.path.resolve( fileName, null, this.main.config.static );
+			if(!file){
+				return await this.serve( fileName, cb );
+			}else{
+				return {data: {code: data}};
+			}
+		}
+
+	},
 	serve: async function(fileName, cb) {
 		var templates = this.main.config.template,
 				data, resolved = false,
@@ -27,7 +53,7 @@ Serve.prototype = {
 
 
 		if(serveType === 'page'){
-			additional = {route: this.main.routes[fileName], scope: this.main.scope};
+			additional = {route: this.main.routes[fileName], scope: this.main.scope, main: this.main};
 			fileName = path.join('page', additional.route.page +'.jsx');
 		}
 
@@ -64,6 +90,18 @@ Serve.prototype = {
 		if(cb)
 			cb(result.error, result.data)
 		return result;
+	},
+	isStatic: function(name, code) {
+		if(name[0] !== '/')
+			name = '/'+name;
+
+		return name in staticCache;
+	},
+	setStatic: function(name, code) {
+		if(name[0] !== '/')
+			name = '/'+name;
+
+		staticCache[name] = {server: serves.plain, data: {code: code}};
 	},
 	middleware: async function(req, res, next) {
 		var result;

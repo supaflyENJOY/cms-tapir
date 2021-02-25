@@ -155,7 +155,7 @@ class JSXTemplateTuner {
 									}
 								}else if(declaration.type === 'Identifier'){
 									noExport = false;
-									bodyElement.declaration = template.default.ast(`function Wrapper(input){return ${declaration.name}.call(this, inheritConfig( input ));}`);
+									bodyElement.declaration = template.default.ast(`function Wrapper(input, children){return ${declaration.name}.call(this, inheritConfig( input ), children);}`);
 								}
 							}
 						}
@@ -170,7 +170,7 @@ class JSXTemplateTuner {
 									other.push(bodyElement1);
 								}
 							}
-							var wrapper = template.default.ast(`export default function Template(input){input = inheritConfig( input ); this.dom = [];}`);
+							var wrapper = template.default.ast(`export default function Template(input, children){input = inheritConfig( input ); this.dom = [];}`);
 							for( var i = 0, _i = other.length; i < _i; i++ ){
 								wrapper.declaration.body.body.push(pushJSXs(other[ i ], scope))
 							}
@@ -189,7 +189,7 @@ class JSXTemplateTuner {
 }
 var pushJSXs = function(node, scope) {
 	if(node.type === 'ExpressionStatement'){
-		if(node.expression.type === 'JSXElement'){
+		if(node.expression.type === 'JSXElement' || node.expression.type === 'JSXFragment' || node.expression.type === 'JSXExpressionContainer'){
 			scope.anyJSX = true;
 			var pushAST = template.default.ast(`this.dom.push();`);
 			pushAST.expression.arguments.push(node.expression);

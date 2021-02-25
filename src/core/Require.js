@@ -126,19 +126,24 @@ ansispan.foregroundColors = {
 
     return true;
   };
+  window.preloaded = {};
   var jsLoader = function( fileName ){
-    var script = document.createElement( 'script' );
-    script.setAttribute( 'type', script.type = 'text/javascript' );
-    script.onload = function(a,b,c){
+    if(fileName in preloaded){
+      eval(preloaded[fileName]);
+    }else{
+      var script = document.createElement( 'script' );
+      script.setAttribute( 'type', script.type = 'text/javascript' );
+      script.onload = function( a, b, c ){
 
-    };
+      };
 
-    script.onerror = function(a,b,c){
-      if(fileName.indexOf('Fields')>-1)debugger
-      console.log('kkk',a,b,c)
-    };
-    script.setAttribute( 'src', script.src = '/'+fileName );
-    head.appendChild( script );
+      script.onerror = function( a, b, c ){
+        if( fileName.indexOf( 'Fields' ) > -1 ) debugger
+        console.log( 'kkk', a, b, c )
+      };
+      script.setAttribute( 'src', script.src = '/' + fileName );
+      head.appendChild( script );
+    }
     if(!window.allLoaded.js[fileName]){
       window.allLoaded.js[ fileName ] = true;
       window.allLoaded.jsList.push( fileName );
@@ -176,12 +181,14 @@ ansispan.foregroundColors = {
     }
   };
   window.define = function(fileName, deps, fn) {
+
     fileName = Path.trim(fileName);
     deps = deps.map(function(dep) {
       return dep === 'exports' ? 'exports': resolve(fileName, dep);
     });
 
     if(!(fileName in definitions) || definitions[fileName].notResolved !== 0){
+      window.define.list.push(fileName);
       definitions[ fileName ] = { fileName: fileName, deps: deps, fn: fn, exports: {} };
 
       var notResolved = 0;
@@ -234,12 +241,15 @@ ansispan.foregroundColors = {
     }
     _define(fileName)
   };
+  window.define.list = [];
   window.define.definitions = definitions;
   window.define.waiting = waiting;
-
+  
   window.RenderBlocks = function(blocks, callback) {
     if(blocks === void 0 || blocks === null){
       blocks = [];
+    }else if(blocks.name){
+      blocks = [blocks];
     }else if(Array.isArray(blocks)){
 
     }else{
@@ -256,7 +266,6 @@ ansispan.foregroundColors = {
 
             // rendered block
             var something = new blockModule.default(new BlockNamespace(block));
-
             drawSubBlock(something);
             resolved[subUid] = something || true;
             for(var i = 0, _i = blocks.length; i < _i; i++){

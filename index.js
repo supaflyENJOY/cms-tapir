@@ -102,8 +102,9 @@ var Dir = require('./dir');
 updateCommitInfo();
 var CMS = function(cfg) {
   Observable.call(this);
-  util.deepAssign(this, {config: this.normalizePaths(this.defaultConfig(), __dirname)});
   util.deepAssign(this, {config: this.normalizePaths(cfg.config, cfg.base)});
+  util.deepAssign(this, {config: this.normalizePaths(this.defaultConfig(), __dirname)});
+
 
   this.routes = Object.assign({}, cfg.routes);
   this.modules = [];
@@ -162,7 +163,8 @@ CMS.prototype = {
 
     var app = this.app = App()
     app.use(this.getModule('Serve').middleware);
-
+    
+    
     config.static.forEach(dir => {
       console.log('STATIC: ', dir.path)
       app.use(App.static(dir.path));
