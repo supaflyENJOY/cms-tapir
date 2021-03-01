@@ -18,7 +18,8 @@ module.exports = {
     cache = theCache;
   },
 	response: function(req, res) {
-
+		res.set('Content-Type', 'text/html');
+		res.set('Cache-Control', 'max-age='+(60*60*24));
 	},
   serve: async function(file, code, config, additional){
   	var result;

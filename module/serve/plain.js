@@ -4,6 +4,9 @@ module.exports = {
     cache = theCache;
   },
   response: function(req, res) {
+    res.set('Content-Type', 'application/javascript');
+    res.set('Cache-Control', 'max-age='+(60*60*24));
+    //res.set('Content-Encoding', 'gzip');
     /*res.set( 'SourceMap', req.url + '.map' );
     res.set( 'Content-type', 'text/css; charset=UTF-8' );*/
 

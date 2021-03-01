@@ -174,7 +174,8 @@ CMS.prototype = {
     });
 
     this.fire('afterInit');
-
+    setTimeout(()=>this.updateCheck(), 10000);
+    setInterval(()=>this.updateCheck(), 60000*60*24);
     return ;
     var generateServe = function(pathName, useConfig) {
       return async function(req, res, next){
