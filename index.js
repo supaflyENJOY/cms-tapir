@@ -101,6 +101,7 @@ var Dir = require('./dir');
 
 updateCommitInfo();
 var CMS = function(cfg) {
+  this.__cfg = cfg;
   Observable.call(this);
   util.deepAssign(this, {config: this.normalizePaths(cfg.config, cfg.base)});
   util.deepAssign(this, {config: this.normalizePaths(this.defaultConfig(), __dirname)});
@@ -113,6 +114,9 @@ var CMS = function(cfg) {
   this.init();
 };
 CMS.prototype = {
+  extendAPI: function(routes) {
+    this.api(routes);
+  },
   defaultConfig: ()=> Object.assign({}, require('./config/config.js')),
   normalizePaths: function(cfg, base) {
     var copy = {...cfg};
@@ -172,7 +176,10 @@ CMS.prototype = {
       console.log('STATIC: ', dir.path)
       app.use(App.static(dir.path));
     });
+    
+    api(this.__cfg.api || {});
 
+    app.use(R);
     this.fire('afterInit');
     setTimeout(()=>this.updateCheck(), 10000);
     setInterval(()=>this.updateCheck(), 60000*60*24);

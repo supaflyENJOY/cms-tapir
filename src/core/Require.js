@@ -244,7 +244,24 @@ ansispan.foregroundColors = {
   window.define.list = [];
   window.define.definitions = definitions;
   window.define.waiting = waiting;
-  
+
+  var tmpArea = document.createElement("textarea");
+  function decodeHtml(html) {
+    tmpArea.innerHTML = html;
+    return tmpArea.value;
+  }
+
+  var rH = window.RenderHTML = function(data) {
+    if(typeof data !== 'object'){
+      return decodeHtml(data);
+    }
+    if('get' in data && typeof data.get === 'function'){
+      var arr = data.get();
+    }else{
+      var arr = data;
+    }
+    return arr.map(el=>Array.isArray(el) ? D.h.apply(D, el.slice(0,2).concat( el.slice(2).map(subEl=> Array.isArray(subEl)?rH([subEl]): rH(subEl))  )): decodeHtml(el));
+  };
   window.RenderBlocks = function(blocks, callback) {
     if(blocks === void 0 || blocks === null){
       blocks = [];
@@ -265,7 +282,13 @@ ansispan.foregroundColors = {
           define(Math.random()+'_'+block.name, ['block/'+block.name+'.jsx'], function(blockModule) {
 
             // rendered block
-            var something = new blockModule.default(new BlockNamespace(block));
+
+            var something;
+            //try{
+              something = new blockModule.default( new BlockNamespace( block ) );
+            /*}catch( e ){
+              something = e.message;
+            }*/
             drawSubBlock(something);
             resolved[subUid] = something || true;
             for(var i = 0, _i = blocks.length; i < _i; i++){

@@ -3,7 +3,8 @@ import './Horizontal.scss';
 export default D.declare("block/Horizontal/Horizontal.jsx", {
   ctor: function(input, children){
     input = inheritConfig(input);
-    this.dom = <div class={'block-layout-horizontal'}>
+
+    this.dom = <div class={D.cls('block-layout-horizontal', input.class)}>
       {children ? children : RenderBlocks(input.blocks, ()=>this.afterUpdate())}
     </div>;
   },
@@ -13,6 +14,5 @@ export default D.declare("block/Horizontal/Horizontal.jsx", {
     }, 0);
   },
   afterAddToDOM: function() {
-    console.log(1);
   }
 });

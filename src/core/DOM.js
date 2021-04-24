@@ -272,6 +272,9 @@ NS.apply = function(a,b) {
             sub.__cmp[fnName] && sub.__cmp[fnName](el);
         for( var i = 0, _i = sub.childNodes.length; i < _i; i++ ){
             var childNode = sub.childNodes[ i ];
+            if('dom' in childNode){
+                childNode = childNode.dom;
+            }
             D._recursiveCmpCall(sub, childNode, fnName);
         }
     };

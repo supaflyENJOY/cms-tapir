@@ -28,6 +28,17 @@ module.exports = {
 			dependency = new fileReader.Dependency(file);
       //code = new fileReader.Dependency( file );
     }
+    if(additional && additional.onChange){
+    	var listenUpdate = function(fileName) {
+    		if(fileName === file.path){
+					additional.onChange();
+					additional.onChange.uns.forEach(fn => fn());
+				}
+			};
+			(additional.onChange.uns || (additional.onChange.uns = [])).push(
+				fileReader.on('update', listenUpdate)
+			);
+		}
 
 		var configFile = file.clone(), configObject;
 		configFile.ext = 'json5';
@@ -41,7 +52,8 @@ module.exports = {
 		var baseFile = file;
 
 		const importExtractor = new BabelPluginExtractImportNames();
-		const appendFoo = new JSXTemplateTuner(JSON.stringify( configObject || {} ));
+		const sourceFileName = util.path.normalize(baseFile.subPath);
+		const wrapInputPlugin = new JSXTemplateTuner(JSON.stringify( configObject || {} ), configObject && util.path.normalize(configFile.subPath));
 
 		var result = await dependency.result(async function(){
 			return await new Promise( function( resolve, reject ){
@@ -58,7 +70,7 @@ module.exports = {
 							} ],
 							//[simpleTransformToAMD]
 							[ importExtractor.plugin ],
-							[appendFoo.plugin],
+							[ wrapInputPlugin.plugin ],
 							[ require( '@babel/plugin-transform-modules-amd' ) ]
 						],
 						"generatorOpts": {
@@ -67,8 +79,8 @@ module.exports = {
 							}
 						},
 						sourceMaps: useSourceMaps,
-						sourceFileName: util.path.normalize(baseFile.subPath),
-						moduleId: util.path.normalize(baseFile.subPath)
+						sourceFileName: sourceFileName,
+						moduleId: sourceFileName
 					}, async function( err, d, e ){
 						if( err ){
 							cacheCode[ code ] = { error: new Error( err.message ) };
@@ -115,7 +127,7 @@ module.exports = {
 const template = require('@babel/template');
 const {declare} = require('@babel/helper-plugin-utils');
 class JSXTemplateTuner {
-	constructor(cfg) {
+	constructor(cfg, fileName) {
 		this.plugin = declare(api => {
 			return {
 				visitor: {
@@ -180,7 +192,8 @@ class JSXTemplateTuner {
 							}
 						}
 
-						path.node.body.unshift(template.default.ast(`const blockConfig = new Store(${cfg}).bindings(), inheritConfig = new ConfigInheriter(blockConfig);`));
+						path.node.body.unshift(template.default.ast(`const __store = ${fileName?`window.__store['${fileName}'] = `:''}new Store(${cfg}), blockConfig = __store.bindings(), inheritConfig = new ConfigInheriter(blockConfig);`));
+						fileName && path.node.body.unshift(template.default.ast(`(!window.__store) && (window.__store = {});`));
 					}
 				}
 			}

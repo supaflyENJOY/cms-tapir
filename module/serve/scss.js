@@ -33,6 +33,7 @@ module.exports = {
     }
 
     var baseFile = file;
+    
     var result = await dependency.result(async function(){
       return await (new Promise( function( resolve, reject ){
 

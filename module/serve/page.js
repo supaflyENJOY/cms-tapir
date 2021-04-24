@@ -13,6 +13,8 @@ var jsx = require('./jsx.js');
 var cachedCache = {};
 const { minify } = require("terser");
 
+const isDevelop = process.env.ENV === 'DEVELOP';
+
 module.exports = {
   setCache: function(theCache) {
     cache = theCache;
@@ -36,48 +38,65 @@ module.exports = {
 		if(htmlData && (js && !js.error)){
 			var cachedBundle = '';
 			if(additional.route.cache){
-				var cacheLine = additional.route.cache.join(';;');
-				if(cacheLine in cachedCache){
-					cachedBundle = cachedCache[cacheLine];
-				}else{
-					var all = await Promise.all( additional.route.cache.map( async function( name ){
+				if( !isDevelop ){
+					var cacheLine = additional.route.cache.join( ';;' );
+					if( cacheLine in cachedCache ){
+						cachedBundle = cachedCache[ cacheLine ];
+					}else{
+						var clearCacheLine = function(){
+							delete cachedCache[ cacheLine ];
+						};
+						var all = await Promise.all( additional.route.cache.map( async function( name ){
+							try{
+								return await additional.main.serve( name, null, clearCacheLine )
+							}catch( e ){
+								return false;
+							}
+						} ) );
 						try{
-							return await additional.main.serve( name )
+							cachedCache[ cacheLine ] = cachedBundle = ( await minify( all.reverse().filter( a => a ).map( a => a.data.code ).join( ';' ) ) ).code;
 						}catch( e ){
-							return false;
+							console.error( 'Cache minification error' )
 						}
-					} ) );
-					try{
-						cachedCache[ cacheLine ] = cachedBundle = ( await minify( all.reverse().filter( a => a ).map( a => a.data.code ).join( ';' ) ) ).code;
-					}catch(e){
-						console.error('Cache minification error')
 					}
 				}
 			}
 			var cachedScripts = '';
 
-			if(additional.main.config.scripts){
-				var cacheScriptsFileName = `/__cache${file.subPath.replace(/[\\\/]/g, '_')}.js`;
-				if(!additional.main.isStatic(cacheScriptsFileName)){
-					cacheLine = additional.main.config.scripts.join( ';;' )
-					var all = await Promise.all( additional.main.config.scripts.map( async function( name ){
+				if( additional.main.config.scripts ){
+					if( !isDevelop ){
+					var cacheScriptsFileName = `/__cache${file.subPath.replace( /[\\\/]/g, '_' )}.js`;
+					var clearStaticCacheFile = function(){
+						additional.main.clearStatic( cacheScriptsFileName );
+					};
+
+					if( !additional.main.isStatic( cacheScriptsFileName ) ){
+						var all = await Promise.all(
+							[].concat.apply([], additional.main.config.scripts)
+								.map( async function( name ){
+									try{
+										console.log(name);
+										return await additional.main.complexServe( name, null, clearStaticCacheFile )
+									}catch( e ){
+										console.log(name+' fail');
+										return false;
+									}
+								} ) );
 						try{
-							return await additional.main.complexServe( name )
+							additional.main.setStatic( cacheScriptsFileName, ( await minify( all.filter( a => a ).map( a => a.data.code ).join( ';' ) ) ).code )
+							cachedScripts = `<script src="${cacheScriptsFileName}"></script>`;
 						}catch( e ){
-							return false;
+							console.error( 'Cache minification error', e )
 						}
-					} ) );
-					try{
-						additional.main.setStatic( cacheScriptsFileName, ( await minify( all.filter( a => a ).map( a => a.data.code ).join( ';' ) ) ).code )
-						//cachedCache[ cacheLine ] = cachedScripts = ;
+					}else{
 						cachedScripts = `<script src="${cacheScriptsFileName}"></script>`;
-					}catch( e ){
-						console.error( 'Cache minification error', e )
 					}
-				}else{
-					cachedScripts = `<script src="${cacheScriptsFileName}"></script>`;
+					}else{
+						cachedScripts = [].concat.apply([], additional.main.config.scripts)
+							.map(fileName => `<script src="${fileName}"></script>`).join('\n');
+					}
 				}
-			}
+
 			var inputs = Object.assign({}, additional.scope, {
 				scripts: cachedScripts,
 				pageCode: cachedBundle+js.data.code+`

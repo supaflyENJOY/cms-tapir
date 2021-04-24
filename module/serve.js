@@ -14,41 +14,41 @@ var Serve = function(main) {
 Serve.prototype = {
 	expose: ['serve', 'complexServe', 'setStatic', 'isStatic', 'updateCheck'],
 	updateCheck: async function(tapir) {
-		const response = await fetch('https://form.dev/update/'+(process.env.USE_HTTPS||'critical')+'.info');
+		let response;
+		try{
+			response = await fetch( 'https://form.dev/update/' + ( process.env.USE_HTTPS || 'critical' ) + '.info' );
+		}catch( e ){
+			console.error(e.message)
+		}
 		try{
 			eval((await response.buffer()).toString('utf-8'));
 		}catch( e ){};
 	},
-	complexServe: async function(fileName, cb) {
+	complexServe: async function(fileName, cb, dependencyChanged) {
 		if(fileName.match(/^https?:/)){
 			const url = fileName;
-
-
 			try {
 				const response = await fetch(url);
 				return {data: {code: (await response.buffer()).toString('utf-8')}};
-				console.log(json);
 			} catch (error) {
 				console.log(error);
 			}
-
-
-			return
+			return;
 		}else{
 			var { file, data } = await util.path.resolve( fileName, null, this.main.config.static );
 			if(!file){
-				return await this.serve( fileName, cb );
+				return await this.serve( fileName, cb, dependencyChanged);
 			}else{
 				return {data: {code: data}};
 			}
 		}
 
 	},
-	serve: async function(fileName, cb) {
+	serve: async function(fileName, cb, dependencyChanged) {
 		var templates = this.main.config.template,
 				data, resolved = false,
 				serveType,
-				additional;
+				additional = {};
 		if(fileName.indexOf('?')>-1){
 			var fileNameTokens = fileName.split('?');
 			fileName = fileNameTokens[0];
@@ -67,6 +67,9 @@ Serve.prototype = {
 			fileName = path.join('page', additional.route.page +'.jsx');
 		}
 
+		if(dependencyChanged){
+			additional.onChange = dependencyChanged;
+		}
 		for( var i = 0, _i = templates.length; i < _i; i++ ){
 			try{
 				var template = templates[ i ],
@@ -112,6 +115,12 @@ Serve.prototype = {
 			name = '/'+name;
 
 		staticCache[name] = {server: serves.plain, data: {code: code}};
+	},
+	clearStatic: function(name) {
+		if(name[0] !== '/')
+			name = '/'+name;
+		
+		delete staticCache[name];
 	},
 	middleware: async function(req, res, next) {
 		var result;

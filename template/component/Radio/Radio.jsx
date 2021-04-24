@@ -1,5 +1,9 @@
 import {Component} from '../Component.jsx';
 
+/*
+Radio component has it's own value property and group property.
+When you change group property (outside of component) — corresponding radio would be selected.
+ */
 var Radio = new Component({
   ctor: function(cfg) {
     this.createDOM();

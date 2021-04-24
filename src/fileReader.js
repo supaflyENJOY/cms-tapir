@@ -160,6 +160,9 @@ M.Dependency.prototype = {
     }finally{
       for( var i = 0, _i = this.files.length; i < _i; i++ ){
         var file = this.files[ i ];
+        if(typeof file === 'object' && file.file instanceof Dir.File){
+          file = file.file.path;
+        }
         (fileUsageInDependencyCache[file] || (fileUsageInDependencyCache[file] = {}))[filesToken] = true;
       }
 
