@@ -91,6 +91,7 @@ module.exports = {
 
 
 								var {file, data} = await util.path.resolve( item.from, baseFile, config.template );
+								dependency.register(file)
 								return { base: baseFile, file: item.from, resolved: file, pos: item.fromLocation };
 								file = file[ 0 ].replace( /\\/g, '/' );
 								if( !( ( '/' + util.path.getDisplayName( file ) ) in cache ) ){

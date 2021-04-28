@@ -1,4 +1,5 @@
 import {Component} from '/component/Component.jsx';
+import './List.scss';
 
 var List = new Component({
 	name: 'List',
@@ -42,6 +43,7 @@ var List = new Component({
 		D.insertAfter( this.items.get().map( renderChild ), _self.dom );
 
 		this.items.on('add', function(item, prevItem, nextItem) {
+			_self.log('add', item);
 			var dom;
 			if(prevItem){
 				// insert after
@@ -75,6 +77,7 @@ var List = new Component({
 		};
 
 		this.items.on('remove', function(item) {
+			_self.log('remove', item);
 			var dom = _itemsMap.get(item);
 			for( var i = 0, _i = dom.length; i < _i; i++ ){
 				var domElement = dom[ i ];
@@ -97,16 +100,20 @@ var List = new Component({
 		D.replaceChildren( _self.dom, this.items.get().map( renderChild ) );
 
 		this.items.on('add', function(item, prevItem, nextItem) {
+			_self.log('add', item);
 			var dom;
 			if(prevItem){
 				// insert after
 				dom = _itemsMap.get(prevItem)
-				D.insertAfter(renderChild(item), dom[dom.length - 1]);
+				dom = dom[dom.length - 1];
+				if('dom' in dom){ dom = dom.dom; }
+				D.insertAfter(renderChild(item), dom);
 			}else if(nextItem){
 				// insert before
-				dom = _itemsMap.get(nextItem)
-				D.insertBefore(renderChild(item), dom[0]);
-
+				dom = _itemsMap.get(nextItem);
+				dom = dom[0];
+				if('dom' in dom){ dom = dom.dom; }
+				D.insertBefore(renderChild(item), dom);
 			}else{
 				D.replaceChildren(_self.dom, renderChild(item));
 			}

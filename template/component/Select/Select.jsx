@@ -32,9 +32,13 @@ var Select = new Component({
 	initBinding: function() {
 		var _self = this;
 
-		this.sub([this.value, this.group], function (val, group) {
-			_self.inputEl.checked = val === group;
+		this.items.on('add', function() {
+			_self.inputEl.value = _self.value.get();
 		});
+		this.items.on('remove', function() {
+			_self.inputEl.value = _self.value.get();
+		});
+
 	}
 });
 

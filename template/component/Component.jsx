@@ -31,7 +31,7 @@ Component.prototype = {
     for(var key in cfg){
       var val = cfg[key];
       if(key in prop){
-        if(val instanceof Store.StoreBinding || val instanceof Store.HookPrototype){
+        if(val instanceof Store.StoreBinding || val instanceof Store.HookPrototype || val instanceof Store.ArrayStore){
           this[key] = val;
         }else{
           this[key] = new Store.Value[prop[key].type.name](val);
@@ -91,6 +91,9 @@ Component.prototype = {
   sub: function() {
     var un = this.store.sub.apply(this.store, arguments);
     this.__un.add(un);
+  },
+  log: function() {
+  
   }
 };
 var Property = function(type) {

@@ -3,6 +3,7 @@ import { Checkbox } from "component/Checkbox/Checkbox.jsx";
 import Vertical from "block/Layout/Vertical/Vertical.jsx";
 import { Slider } from "component/Slider/Slider.jsx";
 import { Select } from "component/Select/Select.jsx";
+import { renderProperty, updateSelectableBlocks } from "component/admin/Property/Renderer.jsx";
 export default function main(input){
 
   var select, content, properties, currentPage = new Store.Value.Any(null);
@@ -28,6 +29,8 @@ export default function main(input){
   var eventHandleFn = function(e) {
     console.log(e.detail)
   };
+
+
   currentPage.hook(function(page) {
     if(communicationHash){
       window.document.removeEventListener(communicationHash, eventHandleFn)
@@ -44,14 +47,33 @@ export default function main(input){
       script.src = '/admin/admin.js?hash='+communicationHash;
       this.contentDocument.head.appendChild(script);
     } );
+
+    Ajax.post('/admin/page/get', {page: page}, function(err, data) {
+      var schema = {}
+      if(data.manifest){
+        schema = data.manifest.schema;
+      }
+
+      D.replaceChildren(properties,
+        Object.keys(schema)
+          .sort()
+          .map(key=>({key, schema: schema[key], value: data.manifest[key]}))
+          .map(renderProperty)
+        );
+    });
+
   }, true)
   
   Ajax.post('/admin/page/list', {page: 'main'}, function(err, data) {
     select.setItems(data.map(item=>({key:item.path, value: item.page})))
   });
-  
+setTimeout(function() {
 
 
+  Ajax.post('/admin/block/list', {}, function(err, data) {
+    updateSelectableBlocks(data.block);
+  });
+}, 2000)
   return dom;
 /*  var val1 = new Store.Value.Boolean(false);
 

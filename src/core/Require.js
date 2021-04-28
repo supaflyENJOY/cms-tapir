@@ -265,7 +265,11 @@ ansispan.foregroundColors = {
   window.RenderBlocks = function(blocks, callback) {
     if(blocks === void 0 || blocks === null){
       blocks = [];
-    }else if(blocks.name){
+    }
+    if(blocks instanceof Store.ArrayStore || blocks instanceof Store || blocks instanceof Store.StoreBinding){
+      blocks = blocks.get();
+    }
+    if(blocks.name){
       blocks = [blocks];
     }else if(Array.isArray(blocks)){
 

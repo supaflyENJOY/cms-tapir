@@ -131,14 +131,16 @@ const dependencyCache = {},
 
 M.Dependency.prototype = {
   read: async function(file, encoding = 'utf-8') {
-    var filePath = file instanceof Dir.File ? file.path : file;
-    //filePath = M.normalizePath(filePath);
-    this.files.push(filePath);
+    this.register(file);
 
     return await M.read(file, encoding);
   },
+  register: function(file) {
+    var filePath = file instanceof Dir.File ? file.path : file;
+    this.files.push(filePath);
+  },
   result: async function(fn) {
-    const filesToken = this.files.sort().join('*');
+    let filesToken = this.files.sort().join('*');
     if(filesToken in dependencyCache){
       const cached = dependencyCache[filesToken];
       if(cached instanceof Promise)
