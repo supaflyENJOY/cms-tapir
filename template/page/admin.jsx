@@ -30,6 +30,25 @@ export default function main(input){
     console.log(e.detail)
   };
 
+  var tryToPredictTheSchema = function(cfg) {
+    var out = {};
+    for(var key in cfg){
+      var val = cfg[key], type = typeof val;
+      if(type === 'string'){
+        out[key] = {type: 'String'};
+      }else if(type === 'number'){
+        out[key] = {type: 'Number'};
+      }else if(type === 'object'){
+        if(Array.isArray(val)){
+          if(val.length && val[0].name){
+            out[ key ] = { type: 'Array', of: 'Block'};
+          }
+        }
+      }
+    }
+    return out;
+  };
+
 
   currentPage.hook(function(page) {
     if(communicationHash){
@@ -53,6 +72,9 @@ export default function main(input){
       if(data.manifest){
         schema = data.manifest.schema;
       }
+
+      if(!schema)
+        schema = tryToPredictTheSchema(data.manifest);
 
       D.replaceChildren(properties,
         Object.keys(schema)

@@ -1,4 +1,4 @@
-import {Component} from 'cmp/Component.jsx';
+import {Component} from '/component/Component.jsx';
 
 
 var Input = new Component({

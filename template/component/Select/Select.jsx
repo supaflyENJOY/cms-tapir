@@ -32,11 +32,15 @@ var Select = new Component({
 	initBinding: function() {
 		var _self = this;
 
-		this.items.on('add', function() {
+		var updateValue = Store.debounce(function() {
 			_self.inputEl.value = _self.value.get();
+		}, 1);
+
+		this.items.on('add', function() {
+			updateValue();
 		});
 		this.items.on('remove', function() {
-			_self.inputEl.value = _self.value.get();
+			updateValue();
 		});
 
 	}

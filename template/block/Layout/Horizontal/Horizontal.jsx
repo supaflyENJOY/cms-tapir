@@ -5,7 +5,7 @@ export default D.declare("block/Horizontal/Horizontal.jsx", {
     input = inheritConfig(input);
 
     this.dom = <div class={D.cls('block-layout-horizontal', input.class)}>
-      {children ? children : RenderBlocks(input.blocks, ()=>this.afterUpdate())}
+      {children ? children : this.drawBlock(input.blocks, ()=>this.afterUpdate())}
     </div>;
   },
   afterUpdate: function() {

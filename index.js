@@ -106,8 +106,9 @@ var CMS = function(cfg) {
   util.deepAssign(this, {config: this.normalizePaths(cfg.config, cfg.base)});
   util.deepAssign(this, {config: this.normalizePaths(this.defaultConfig(), __dirname)});
 
-
-  this.routes = Object.assign({}, cfg.routes);
+  this.routes = Object.assign({}, this.defaultRoutes());
+  this.routes = Object.assign(this.routes, cfg.routes);
+  
   this.modules = [];
   this.modulesHash = {};
   this.scope = appScope;
@@ -118,6 +119,7 @@ CMS.prototype = {
     this.api(routes);
   },
   defaultConfig: ()=> Object.assign({}, require('./config/config.js')),
+  defaultRoutes: ()=> Object.assign({}, require('./config/route.js')),
   normalizePaths: function(cfg, base) {
     var copy = {...cfg};
     !(Array.isArray(copy.static)) && (copy.static = [copy.static]);

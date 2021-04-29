@@ -262,7 +262,14 @@ ansispan.foregroundColors = {
     }
     return arr.map(el=>Array.isArray(el) ? D.h.apply(D, el.slice(0,2).concat( el.slice(2).map(subEl=> Array.isArray(subEl)?rH([subEl]): rH(subEl))  )): decodeHtml(el));
   };
+
+
   window.RenderBlocks = function(blocks, callback) {
+    /* can render one block or many.
+      Block is an object that have name. Name would be used for requiring block/$name$.jsx and rendering it
+      Block can have data <Object> property. Data would be passed to component as it's input
+      This function is async, so it returns hook
+     */
     if(blocks === void 0 || blocks === null){
       blocks = [];
     }
@@ -287,9 +294,10 @@ ansispan.foregroundColors = {
 
             // rendered block
 
-            var something;
+            var something, data = new BlockNamespace( block );
             //try{
-              something = new blockModule.default( new BlockNamespace( block ) );
+              something = new blockModule.default( data );
+            window.RenderBlocks.rendered.push({el: something, data: data, info: block});
             /*}catch( e ){
               something = e.message;
             }*/
@@ -305,6 +313,7 @@ ansispan.foregroundColors = {
       }));
     }
   }
+  window.RenderBlocks.rendered = [];
   window.inheritConfig = function(a) {
     return a;
   }

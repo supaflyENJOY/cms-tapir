@@ -8,6 +8,8 @@ const Component = function(cfg) {
     }
 
     this.store = new Store();
+    this.childBlocks = [];
+
     this._apply(cfg);
     arguments.length > 1 && this._children.call(this, slice.call(arguments, 1));
     this.__un = new D.Unsubscribe();
@@ -21,6 +23,21 @@ const Component = function(cfg) {
 };
 
 Component.prototype = {
+  parentBlock: null,
+  childBlocks: [],
+  drawBlock: function(blocks, callback) {
+    var _self = this;
+    RenderBlocks(blocks, function(drawn) {
+      for( var i = 0, _i = drawn.length; i < _i; i++ ){
+        var drawnElement = drawn[ i ];
+        if(drawnElement instanceof Component){
+          drawnElement.parentBlock = _self;
+          _self.childBlocks.push(drawnElement);
+        }
+      }
+      callback(drawn);
+    })
+  },
   prop: {},
   _children: function(children) {
     this.children = children;
