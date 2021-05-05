@@ -63,34 +63,48 @@ var selectFn = function(e) {
 		// write multiselect logic
 	}
 };
-RenderBlocks.rendered.forEach(function(item, n) {
-	var el = item.el;
-	if('dom' in el){
-		el = el.dom;
-	}
-	var elInfo = {el: el, id: n, data: item.data, info: item.info};
 
-	elInfos[n] = elInfo;
-	if(el instanceof Node){
-		var rect = D.getRect(el);
-		
-		elInfo.rect = rect;
-		elInfo.selected = new Store.Value.Boolean(false);
-		elInfo.selection = D.div( {
-			onclick: selectFn,
-			renderTo: document.body,
-			style: {
-				border: _=>elInfo.selected.hook(val=> _(val ? '2px dashed #0efdc5' : '')),
-				//border: Store.AND(elInfo.selected, (_)=>_('2px dashed #0efdc5')),
-				'box-sizing': 'border-box',
-				position: 'absolute',
+updateBlocks = function() {
+	RenderBlocks.rendered.forEach(function(item, n) {
+		var el = item.el;
+		if('dom' in el){
+			el = el.dom;
+		}
+		var elInfo = elInfos[n] || {el: el, id: n, data: item.data, info: item.info};
+
+		elInfos[n] = elInfo;
+		if(el instanceof Node){
+			var rect = D.getRect(el);
+
+			elInfo.rect = rect;
+			elInfo.selected = elInfo.selected || new Store.Value.Boolean(false);
+			if(!elInfo.selection){
+				elInfo.selection = D.div( {
+					onclick: selectFn,
+					renderTo: document.body,
+					style: {
+						border: _=>elInfo.selected.hook(val=> _(val ? '2px dashed #0efdc5' : '')),
+						//border: Store.AND(elInfo.selected, (_)=>_('2px dashed #0efdc5')),
+						'box-sizing': 'border-box',
+						position: 'absolute',
+
+						background: `rgba(0,0,0,0.1)`,
+						'z-index': 1000000
+					}
+				} );
+			}
+
+			D.ext(elInfo.selection, {
+				style: {
 					left: rect.left + 'px',
 					top: rect.top + 'px',
 					width: rect.width + 'px',
-					height: rect.height + 'px',
-					background: `rgba(0,0,0,0.1)`
+					height: rect.height + 'px'
 				}
-		} )
+			})
 
-	}
-});
+
+		}
+	});
+};
+updateBlocks();
