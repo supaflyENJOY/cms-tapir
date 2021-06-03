@@ -25,9 +25,40 @@ export default function main(input){
   window.document.addEventListener('myCustomEvent', handleEvent, false)
   function handleEvent(e) {
     console.log(e.detail) // outputs: {foo: 'bar'}
+
+
   }
+  
+  var handlers = {
+    init: function(data) {
+      console.info('Init', data)
+    },
+    selection: function(data) {
+      Ajax.post('/admin/block/get', {name: data.name}, function(err, block) {
+        var schema = {}
+        if(block.manifest){
+          schema = block.manifest.schema;
+        }
+
+        debugger
+        if(!schema)
+          schema = tryToPredictTheSchema(block.manifest);
+
+        D.replaceChildren(properties,
+          Object.keys(schema)
+            .sort()
+            .map(key=>({key, schema: schema[key], value: (data.data && data.data[key]) || block.manifest[key]}))
+            .map(renderProperty)
+        );
+      });
+
+    }
+  };
   var eventHandleFn = function(e) {
-    console.log(e.detail)
+    var data = e.detail;
+    if(data.name){
+      handlers[ data.name ]( data.data );
+    }
   };
 
   var tryToPredictTheSchema = function(cfg) {
@@ -67,7 +98,7 @@ export default function main(input){
       this.contentDocument.head.appendChild(script);
     } );
 
-    Ajax.post('/admin/page/get', {page: page}, function(err, data) {
+    Ajax.post('/admin/page/get', {name: page}, function(err, data) {
       var schema = {}
       if(data.manifest){
         schema = data.manifest.schema;

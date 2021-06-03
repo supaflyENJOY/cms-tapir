@@ -18,6 +18,9 @@ var renderers = {
 	Array: function(key, schema, value) {
 		window.www = value;
 		return propWrapper(key, <div><List items={value} direction={'vertical'}>{(item)=>subItemRenderer(schema.of, schema, item)}</List><input type={'button'} value={'Add item'}/></div>)
+	},
+	Block: function(key, schema, value) {
+		return propWrapper(key, editors.Block('Block', schema, value));
 	}
 };
 

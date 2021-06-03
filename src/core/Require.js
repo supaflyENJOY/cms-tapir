@@ -296,7 +296,7 @@ ansispan.foregroundColors = {
 
             var something, data = new BlockNamespace( block );
             //try{
-              something = new blockModule.default( data );
+            something = new blockModule.default( data );
             window.RenderBlocks.rendered.push({el: something, data: data, info: block});
             /*}catch( e ){
               something = e.message;

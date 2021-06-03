@@ -64,23 +64,97 @@ var selectFn = function(e) {
 	}
 };
 
+var lastMatched = [];
+var selectionEl;
+var selectVisual = function(list){
+
+
+	if( selectionEl ){
+		selectionEl.parentNode.removeChild( selectionEl );
+		selectionEl = void 0;
+	}
+	if( list.length ){
+		var el = list[ 0 ]
+
+		var info = RenderBlocks.rendered.filter(block=>{
+			var blockEl = block.el;
+			if(blockEl.dom)
+				blockEl = blockEl.dom;
+			return blockEl === el;
+		});
+
+		if(info.length){
+			sendEvent('selection', info[0].info);
+		}
+		//debugger
+
+		var rect = D.getRect( el );
+		selectionEl = D.div( {
+			renderTo: document.body,
+			style: {
+				border: '2px dashed #0efdc5',
+				'box-sizing': 'border-box',
+				position: 'absolute',
+				background: `rgba(0, 0, 0, 0.1)`,
+				'z-index': 1000000,
+				'pointer-events': 'none'
+			}
+		} );
+		//elInfo.selection.addEventListener('click', selectFn, true);
+
+
+	D.ext( selectionEl, {
+		style: {
+			left: rect.left + 'px',
+			top: rect.top + 'px',
+			width: rect.width + 'px',
+			height: rect.height + 'px'
+		}
+	} )
+	}
+};
+selectFn = function(e) {
+	e.stopPropagation();
+	e.preventDefault();
+
+	var target = e.target;
+	var matched = [];
+	while(target.parentNode){
+		if(target.info instanceof InfoMetadata){
+			matched.push(target);
+		}
+		target = target.parentNode;
+	}
+	selectVisual(matched);
+
+	lastMatched = matched;
+	console.log(matched);
+	//debugger;
+}
+document.body.addEventListener('click', selectFn, true);
+
+var InfoMetadata = function(cfg) {
+	Object.assign(this, cfg);
+};
+
 updateBlocks = function() {
 	RenderBlocks.rendered.forEach(function(item, n) {
 		var el = item.el;
 		if('dom' in el){
 			el = el.dom;
 		}
-		var elInfo = elInfos[n] || {el: el, id: n, data: item.data, info: item.info};
+		var elInfo = elInfos[n] || new InfoMetadata({el: el, id: n, data: item.data, info: item.info});
 
 		elInfos[n] = elInfo;
 		if(el instanceof Node){
+			el.info = elInfo;
 			var rect = D.getRect(el);
 
 			elInfo.rect = rect;
 			elInfo.selected = elInfo.selected || new Store.Value.Boolean(false);
-			if(!elInfo.selection){
+			/*if(!elInfo.selection){
 				elInfo.selection = D.div( {
-					onclick: selectFn,
+					/!*onclick: selectFn,*!/
 					renderTo: document.body,
 					style: {
 						border: _=>elInfo.selected.hook(val=> _(val ? '2px dashed #0efdc5' : '')),
@@ -92,6 +166,7 @@ updateBlocks = function() {
 						'z-index': 1000000
 					}
 				} );
+				//elInfo.selection.addEventListener('click', selectFn, true);
 			}
 
 			D.ext(elInfo.selection, {
@@ -101,10 +176,19 @@ updateBlocks = function() {
 					width: rect.width + 'px',
 					height: rect.height + 'px'
 				}
-			})
+			})*/
 
 
 		}
 	});
 };
+(function() {
+	var head = document.getElementsByTagName('head')[0];
+	var s = document.createElement('link');
+	s.setAttribute('type', 'text/css');
+	s.setAttribute('rel', 'stylesheet');
+	s.setAttribute('href', 'scss/inner-page-admin.scss');
+	head.appendChild(s);
+})();
+
 updateBlocks();

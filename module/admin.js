@@ -26,7 +26,8 @@ var getFiles = async function (dir) {
 Admin.prototype = {
 	generateAdminAPI: function() {
 		var main = this.main;
-		return {
+
+		var methods = {
 			'GET:/[live]': {fn: async function() {
 				debugger
 					await new Promise(resolve1 =>setTimeout(resolve1, 2000));
@@ -76,19 +77,26 @@ Admin.prototype = {
 					})).sort();
 					return {block: matchedFiles};
 				}
-			},
-			'POST:/admin/page/get': {
+			}
+		};
+
+		['block', 'page'].forEach(function(type) {
+			methods['POST:/admin/'+type+'/get'] = {
 				options: {
-					page: {type: String}
+					name: {type: String}
 				},
 				fn: async function(args, c) {
-
-					var additional = {route: main.routes[args.page]};
-					if(!additional.route){
-						return false;
+					if(type === 'page'){
+						var additional = { route: main.routes[ args.name ] };
+						if( !additional.route ){
+							return false;
+						}
+					}else{
+						var additional = { route: {page: args.name} };
 					}
-					var fileName = path.join('page', additional.route.page +'.jsx');
-					var manifest = path.join('page', additional.route.page +'.json5');
+					debugger
+					var fileName = path.join(type, additional.route.page +'.jsx');
+					var manifest = path.join(type, additional.route.page +'.json5');
 
 					try{
 						var mainFile = await util.path.resolve( fileName, null, main.config.template );
@@ -104,8 +112,12 @@ Admin.prototype = {
 					}
 
 				}
-			}
-		};
+			};
+
+		});
+
+		return methods;
+
 	},
 
 	init: function(){
