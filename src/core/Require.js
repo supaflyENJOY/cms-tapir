@@ -1,7 +1,7 @@
 //
 let self = window;
 self.fetch||(self.fetch=function(e,n){return n=n||{},new Promise(function(t,s){var r=new XMLHttpRequest,o=[],u=[],i={},a=function(){return{ok:2==(r.status/100|0),statusText:r.statusText,status:r.status,url:r.responseURL,text:function(){return Promise.resolve(r.responseText)},json:function(){return Promise.resolve(JSON.parse(r.responseText))},blob:function(){return Promise.resolve(new Blob([r.response]))},clone:a,headers:{keys:function(){return o},entries:function(){return u},get:function(e){return i[e.toLowerCase()]},has:function(e){return e.toLowerCase()in i}}}};for(var c in r.open(n.method||"get",e,!0),r.onload=function(){r.getAllResponseHeaders().replace(/^(.*?):[^\S\n]*([\s\S]*?)$/gm,function(e,n,t){o.push(n=n.toLowerCase()),u.push([n,t]),i[n]=i[n]?i[n]+","+t:t}),t(a())},r.onerror=s,r.withCredentials="include"==n.credentials,n.headers)r.setRequestHeader(c,n.headers[c]);r.send(n.body||null)})});
-
+typeof global === 'undefined' && (global = window);
 var ansispan = function (str) {
   Object.keys(ansispan.foregroundColors).forEach(function (ansi) {
     var span = '<span style="color: ' + ansispan.foregroundColors[ansi] + '">';
@@ -127,17 +127,21 @@ ansispan.foregroundColors = {
     return true;
   };
   window.preloaded = {};
-  var jsLoader = function( fileName ){
+  var jsLoader = function( fileName, dep ){
     if(fileName in preloaded){
       eval(preloaded[fileName]);
     }else{
       var script = document.createElement( 'script' );
+      var loadTimeout = setTimeout(function() {
+        console.log('long loading', fileName);
+      }, 5000);
       script.setAttribute( 'type', script.type = 'text/javascript' );
       script.onload = function( a, b, c ){
-
+        clearTimeout(loadTimeout);
       };
 
       script.onerror = function( a, b, c ){
+        clearTimeout(loadTimeout);
         if( fileName.indexOf( 'Fields' ) > -1 ) debugger
         console.log( 'kkk', a, b, c )
       };
@@ -170,18 +174,82 @@ ansispan.foregroundColors = {
   var _define = function(name) {
     var definition = definitions[name];
     if(definition.notResolved === 0){
+
+      definition.loading = false;
+      if(!definition.mayDefine()){
+        return;
+      }
+      define.log('defining', definition.fileName);
       definition.fn.apply(null, definition.deps.map(function(dep) {
         return dep === 'exports' ? definition.exports : definitions[dep].exports
       }));
+      definition.executed = true;
+      definition.defined();
+
 
       (waiting[definition.fileName] || []).forEach(function(name) {
         definitions[name].notResolved--;
-        _define(name)
+        _define(name);
       });
     }
   };
-  window.define = function(fileName, deps, fn) {
 
+  var EmptyFn = function(){};
+  var Module = function(cfg) {
+    this.children = [];
+    this.childrenHash = {};
+    this.parents = [];
+    Object.assign(this, cfg);
+  };
+  Module.prototype = {
+    executed: false,
+    fileName: '', deps: [], fn: EmptyFn, exports: {}, children: [], parents: [],
+    addChild: function(submodule) {
+      this.children.push(submodule);
+      this.childrenHash[submodule.fileName] = submodule;
+    },
+    addParent: function(supmodule) {
+      this.parents.push(supmodule);
+    },
+    mayDefine: function() {
+      for( var i = 0, _i = this.parents.length; i < _i; i++ ){
+        var parent = this.parents[ i ],
+          childs = parent.children;
+        for( var j = 0, _j = childs.length; j < _j; j++ ){
+          var child = childs[ j ];
+          if(child === this)
+            return true;
+          if(child.loading === true){
+            define.log('waiting', this.fileName, 'because', child.fileName, 'is not loaded')
+            break;
+          }
+        }
+
+      }
+      return this.parents.length === 0 ? true : false;
+    },
+    defined: function() {
+      for( var i = 0, _i = this.parents.length; i < _i; i++ ){
+        var parent = this.parents[ i ],
+          childs = parent.children;
+        for( var j = 0, _j = childs.length; j < _j; j++ ){
+          var child = childs[ j ];
+
+          if(child.loading === true)
+            break;
+
+          if(!child.executed){
+            define.log(this.fileName, '>', child.fileName);
+            _define( child.fileName )
+          }
+        }
+      };
+    }
+  };
+
+  /* not resolved — count of not resolved deps */
+  window.define = function(fileName, deps, fn) {
+    var waitATick = false;
     fileName = Path.trim(fileName);
     deps = deps.map(function(dep) {
       return dep === 'exports' ? 'exports': resolve(fileName, dep);
@@ -189,7 +257,16 @@ ansispan.foregroundColors = {
 
     if(!(fileName in definitions) || definitions[fileName].notResolved !== 0){
       window.define.list.push(fileName);
-      definitions[ fileName ] = { fileName: fileName, deps: deps, fn: fn, exports: {} };
+
+      if(!(fileName in definitions)){
+        definitions[ fileName ] = new Module({ fileName: fileName, deps: deps, fn: fn, exports: {}, children: [] });
+      }else{
+        Object.assign(definitions[ fileName ], { deps: deps, fn: fn});
+      }
+
+
+
+
 
       var notResolved = 0;
       for( var i = 0, _i = deps.length; i < _i; i++ ){
@@ -199,12 +276,14 @@ ansispan.foregroundColors = {
         var skip = false;
         if( !( dep in definitions ) ){
           var matched = false;
+
+          // can replace cycle with hash
           for( var j = 0, _j = InstantLoaders.length; j < _j; j++ ){
             const instantLoader = InstantLoaders[ j ];
             if( dep.substr( -instantLoader.name.length ).toLowerCase() === instantLoader.name ){
               if( !( dep in definitions ) ){
-                definitions[ dep ] = { exports: {} };
-                if( instantLoader.loader( dep ) ){
+                definitions[ dep ] = new Module({fileName: dep, exports: {}, parents: [] });
+                if( instantLoader.loader( dep, definitions[ dep ] ) ){
                   skip = true;
                   definitions[ dep ].notResolved = 0;
                 }else{
@@ -228,8 +307,18 @@ ansispan.foregroundColors = {
           }
 
         }else{
+          if(definitions[dep].deps && definitions[dep].deps.indexOf(fileName)>-1){
+            console.warn('Circular dependency', dep, fileName);
+            waitATick = true;
+            skip = true;
+        }else{
           skip = definitions[ dep ].notResolved === 0;
         }
+        }
+
+        definitions[ fileName ].addChild(definitions[ dep ]);
+        definitions[ dep ].addParent(definitions[ fileName ]);
+
         if( !skip ){
           ( waiting[ dep ] || ( waiting[ dep ] = [] ) ).push( fileName );
           notResolved++;
@@ -239,7 +328,19 @@ ansispan.foregroundColors = {
     }else{
       definitions[ fileName ].fn = fn;
     }
-    _define(fileName)
+    var defined = function() {
+      _define(fileName);
+    }
+
+    if(waitATick){
+      setTimeout(defined, 1);
+    }else{
+      defined();
+    }
+  };
+  window.define._log = [];
+  window.define.log = function() {
+    window.define._log.push([].slice.call(arguments));
   };
   window.define.list = [];
   window.define.definitions = definitions;

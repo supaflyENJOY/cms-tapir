@@ -95,6 +95,8 @@ Serve.prototype = {
 				}catch( e ){
 					result = { error: true, data: e }
 				}
+			}else{
+				result = {error: true, data: 'unknown type of serve: '+serveType}
 			}
 		}else{
 			result = false;
