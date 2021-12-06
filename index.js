@@ -465,5 +465,5 @@ ${blockCode}
   }
 };
 Object.assign(CMS.prototype, Observable.prototype)
-
+CMS.Group = require('api-tapir').Group;
 module.exports = CMS;
