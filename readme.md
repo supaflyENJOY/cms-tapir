@@ -1,7 +1,9 @@
-Component.
-    Base component class component/Component.jsx
-    prop should contain definition for all reactive links of the component. 
-        Example: {value: {type: 'String'}}
+#Component.
+Base component class component/Component.jsx
+
+prop should contain definition for all reactive links of the component. 
+
+Example: ```{value: {type: 'String'}}```
 
 
 block
@@ -9,8 +11,11 @@ block
 
 ## Config
 Any automatically wrapped jsx can have a config file
+
 We choose json5 format for config. It is like json, but with comments, not strict quotes around properties and all types of strings that are in js.
+
 Config must have the same name as jsx. So put MyComponent.json5 in the same place as MyComponent.jsx and you are ready to go.
+
 
 Config contains properties that would be passed to the jsx as an `input` variable.
 
@@ -28,3 +33,9 @@ Reactivity means that you can reassign some properties and they would be updated
 #### Important:
 If example above is not working — make shure that you have corresponding json5 file with some value in `greet` property.
 
+
+
+
+WebStorm:
+
+disable "Convert html attributes on paste in jsx" in Settings (Preferences)|Editor|General|Smart Keys

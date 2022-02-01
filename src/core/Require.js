@@ -143,6 +143,14 @@ ansispan.foregroundColors = {
       script.onerror = function( a, b, c ){
         clearTimeout(loadTimeout);
         if( fileName.indexOf( 'Fields' ) > -1 ) debugger
+
+        define(fileName, [], function(obj){
+          var errorMsg = 'Error loading `'+ fileName +'`';
+          console.error(errorMsg);
+          obj.default = function(input, children) {
+            return D.div({cls: 'cms-error'}, errorMsg);
+          }
+        })
         console.log( 'kkk', a, b, c )
       };
       script.setAttribute( 'src', script.src = '/' + fileName );

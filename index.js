@@ -106,8 +106,13 @@ var CMS = function(cfg) {
   util.deepAssign(this, {config: this.normalizePaths(cfg.config, cfg.base)});
   util.deepAssign(this, {config: this.normalizePaths(this.defaultConfig(), __dirname)});
 
-  this.routes = Object.assign({}, this.defaultRoutes());
-  this.routes = Object.assign(this.routes, cfg.routes);
+
+  if(typeof cfg.routes === 'string'){
+    var routesFile = new Dir.File(cfg.base, cfg.routes);
+    this._readRoutes(routesFile);
+  }else{
+    this._initRoutes(cfg.routes);
+  }
   
   this.modules = [];
   this.modulesHash = {};
@@ -115,6 +120,16 @@ var CMS = function(cfg) {
   this.init();
 };
 CMS.prototype = {
+  _readRoutes: async function(routesFile) {
+    //console.log(123, routesFile)
+
+    var data = await fileReader.read(routesFile);
+    //console.log(data)
+  },
+  _initRoutes: function(routes) {
+    this.routes = Object.assign( {}, this.defaultRoutes() );
+    this.routes = Object.assign( this.routes, routes );
+  },
   extendAPI: function(routes) {
     this.api(routes);
   },
@@ -442,10 +457,23 @@ ${blockCode}
     this.modules.push({name, module});
     this.modulesHash[name] = module;
     module.init();
-    if(module.expose)
-      module.expose.forEach(name =>{
-        this[name] = (...args) => module[name](...args);
-      });
+    if(module.expose){
+      module.expose.forEach( name => {
+        console.log( 'Exposed', name )
+
+        this[ name ] = ( ...args ) => {
+          /*console.warn(name);
+          console.dir(module)*/
+          if(!module || !module[name]){
+            debugger
+          }
+
+          return module[ name ]( ...args );
+        };
+        this[ name ].module = module
+      } );
+    }
+
   },
   getModule: function(name) {
     return this.modulesHash[name];

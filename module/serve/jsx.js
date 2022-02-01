@@ -183,7 +183,7 @@ class JSXTemplateTuner {
 									other.push(bodyElement1);
 								}
 							}
-							var wrapper = template.default.ast(`export default function Template(input, children){input = inheritConfig( input ); this.dom = [];}`);
+							var wrapper = template.default.ast(`export default function Template(input, children){if(!(this instanceof Template))return new Template(input, children);input = inheritConfig( input ); this.dom = [];}`);
 							for( var i = 0, _i = other.length; i < _i; i++ ){
 								wrapper.declaration.body.body.push(pushJSXs(other[ i ], scope))
 							}
