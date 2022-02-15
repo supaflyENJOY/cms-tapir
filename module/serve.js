@@ -61,10 +61,11 @@ Serve.prototype = {
 			serveType = 'page';
 		}
 
+		var pageFileName;
 
 		if(serveType === 'page'){
 			additional = {route: this.main.routes[fileName], scope: this.main.scope, main: this.main};
-			fileName = path.join('page', additional.route.page +'.jsx');
+			pageFileName = path.join('page', additional.route.page +'.jsx');
 		}
 
 		if(dependencyChanged){
@@ -73,7 +74,7 @@ Serve.prototype = {
 		for( var i = 0, _i = templates.length; i < _i; i++ ){
 			try{
 				var template = templates[ i ],
-					file = template.file( fileName );
+					file = template.file( pageFileName );
 				data = await fileReader.read( file );
 				resolved = true;
 				break;
@@ -99,7 +100,16 @@ Serve.prototype = {
 				result = {error: true, data: 'unknown type of serve: '+serveType}
 			}
 		}else{
-			result = false;
+			if(serveType === 'page'){
+				result = {error: true, data: `Route ${fileName} can not be resolved, tried search in:\n`+
+						templates
+							.map(t=>t.file( pageFileName ))
+							.map(t=>`\t${t.path}`)
+							.join('\n')
+				};
+			}else{
+				result = false;
+			}
 		}
 
 		if(cb)
@@ -138,6 +148,9 @@ Serve.prototype = {
 			}
 			res.end(result.data.code);
 
+		}else if(result && result.error){
+
+			res.end(result.data);
 		}else{
 			next();
 		}

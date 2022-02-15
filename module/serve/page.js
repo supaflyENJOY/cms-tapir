@@ -78,6 +78,7 @@ module.exports = {
 										console.log(name);
 										return await additional.main.complexServe( name, null, clearStaticCacheFile )
 									}catch( e ){
+										console.error(e);
 										console.log(name+' fail');
 										return false;
 									}

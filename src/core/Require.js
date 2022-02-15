@@ -143,6 +143,14 @@ ansispan.foregroundColors = {
       script.onerror = function( a, b, c ){
         clearTimeout(loadTimeout);
         if( fileName.indexOf( 'Fields' ) > -1 ) debugger
+
+        define(fileName, [], function(obj){
+          var errorMsg = 'Error loading `'+ fileName +'`';
+          console.error(errorMsg);
+          obj.default = function(input, children) {
+            return D.div({cls: 'cms-error'}, errorMsg);
+          }
+        })
         console.log( 'kkk', a, b, c )
       };
       script.setAttribute( 'src', script.src = '/' + fileName );
@@ -434,9 +442,17 @@ ansispan.foregroundColors = {
   }
 
   window.ConfigInheriter = function(blockConfig) {
-    return function (a){
-      console.log(blockConfig)
-      return Object.assign({}, blockConfig , a);
+    return function (prop){
+      var result = Object.assign({}, blockConfig);
+      for(var key in prop){
+        if((key in result) && (result[key] instanceof Store.StoreBinding) && !(prop[key] instanceof Store.StoreBinding)){
+          result[key].set(prop);
+        }else{
+          result[key] = prop[key];
+        }
+      }
+
+      return result;
     }
   }
 })(window.__Path);

@@ -442,10 +442,22 @@ ${blockCode}
     this.modules.push({name, module});
     this.modulesHash[name] = module;
     module.init();
-    if(module.expose)
-      module.expose.forEach(name =>{
-        this[name] = (...args) => module[name](...args);
-      });
+    if(module.expose){
+      module.expose.forEach( name => {
+        console.log( 'Exposed', name )
+
+        this[ name ] = ( ...args ) => {
+          /*console.warn(name);
+          console.dir(module)*/
+          if(!module || !module[name]){
+            debugger
+          }
+
+          return module[ name ]( ...args );
+        }
+      } );
+    }
+
   },
   getModule: function(name) {
     return this.modulesHash[name];
