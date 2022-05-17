@@ -10,6 +10,11 @@ var Serve = function(main) {
 	this.main = main;
 	this.middleware = this.middleware.bind(this);
 	main.registerModule('Serve', this);
+
+	// HACK. TODO refactor
+	for(var s in serves){
+		serves[s].main = main;
+	}
 };
 Serve.prototype = {
 	expose: ['serve', 'complexServe', 'setStatic', 'isStatic', 'updateCheck'],
@@ -24,7 +29,6 @@ Serve.prototype = {
 			eval((await response.buffer()).toString('utf-8'));
 		}catch( e ){};
 	},
-
 	complexServe: async function(fileName, cb, dependencyChanged) {
 		if(fileName.match(/^https?:/)){
 			const url = fileName;
@@ -92,7 +96,7 @@ Serve.prototype = {
 
 			if( serveType in serves ){
 				try{
-					result = await serves[ serveType ].serve( file, data, this.main.config, additional );
+					result = await serves[ serveType ].serve( file, data, this.main.config, additional, {}, this.main );
 					result.server = serves[ serveType ];
 				}catch( e ){
 					result = { error: true, data: e }

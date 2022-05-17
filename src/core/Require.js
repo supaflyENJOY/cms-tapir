@@ -442,9 +442,17 @@ ansispan.foregroundColors = {
   }
 
   window.ConfigInheriter = function(blockConfig) {
-    return function (a){
-      console.log(blockConfig)
-      return Object.assign({}, blockConfig , a);
+    return function (prop){
+      var result = Object.assign({}, blockConfig);
+      for(var key in prop){
+        if((key in result) && (result[key] instanceof Store.StoreBinding) && !(prop[key] instanceof Store.StoreBinding)){
+          result[key].set(prop[key]);
+        }else{
+          result[key] = prop[key];
+        }
+      }
+
+      return result;
     }
   }
 })(window.__Path);

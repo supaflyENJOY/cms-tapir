@@ -39,7 +39,7 @@ const M = module.exports = {
 
     await new Promise(function(resolve, reject) {
       if(data){
-        fileCache[filePath] = {error: false, data: data.toString(encoding)}
+        fileCache[filePath] = {error: false, data: data.toString(encoding), file: file}
         return resolve( data );
       }
 
@@ -56,7 +56,7 @@ const M = module.exports = {
             return reject( fileCache[filePath].error );
           }
 
-          fileCache[filePath] = {error: false, data: data.toString(encoding)}
+          fileCache[filePath] = {error: false, data: data.toString(encoding), file: file}
           resolve(fileCache[filePath].data);
         });
       });
@@ -101,7 +101,10 @@ const M = module.exports = {
       if( file in fileUsageInDependencyCache ){
         var usedInCache = fileUsageInDependencyCache[file];
         for(var cacheString in usedInCache){
-          cacheString.split('*').forEach((name)=>M.fire('update', name));
+          cacheString.split('*').forEach((name)=>{
+            M.fire('update', name);
+            changeFns[name] && changeFns[name].forEach(f=>f(name, fileCache[name].file));
+          });
           delete dependencyCache[cacheString];
         }
         delete fileUsageInDependencyCache[file];
@@ -115,7 +118,7 @@ const M = module.exports = {
 
     M.fire('update', fileName);
 
-    M._waitForCacheClear[fileName] = true;
+    M._waitForCacheClear[fileName] = file;
     if(!M._waitingForCacheClear)
       M._waitingForCacheClear = setTimeout(M._clearFileCache, 100);
   }
@@ -126,7 +129,8 @@ Observer.call(M);
 
 
 const dependencyCache = {},
-  fileUsageInDependencyCache = {};
+  fileUsageInDependencyCache = {},
+  changeFns = {};
 
 
 M.Dependency.prototype = {
@@ -139,7 +143,7 @@ M.Dependency.prototype = {
     var filePath = file instanceof Dir.File ? file.path : file;
     this.files.push(filePath);
   },
-  result: async function(fn) {
+  result: async function(fn, changeFn) {
     let filesToken = this.files.sort().join('*');
     if(filesToken in dependencyCache){
       const cached = dependencyCache[filesToken];
@@ -165,7 +169,14 @@ M.Dependency.prototype = {
         if(typeof file === 'object' && file.file instanceof Dir.File){
           file = file.file.path;
         }
-        (fileUsageInDependencyCache[file] || (fileUsageInDependencyCache[file] = {}))[filesToken] = true;
+        (fileUsageInDependencyCache[file] || (fileUsageInDependencyCache[file] = {}))[filesToken] = this;
+        if(changeFn){
+          if(!(file in changeFns)){
+            changeFns[file] = [];
+          }
+          changeFns[file].push(changeFn);
+        }
+
       }
 
     }

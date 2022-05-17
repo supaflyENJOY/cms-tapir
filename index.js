@@ -101,11 +101,16 @@ var Dir = require('./dir');
 
 updateCommitInfo();
 var CMS = function(cfg) {
+  if(!cfg)
+    cfg = {};
+  
+  if(!cfg.base && module.parent)
+    cfg.base = module.parent.path;
+  
   this.__cfg = cfg;
   Observable.call(this);
-  util.deepAssign(this, {config: this.normalizePaths(cfg.config, cfg.base)});
   util.deepAssign(this, {config: this.normalizePaths(this.defaultConfig(), __dirname)});
-
+  util.deepAssign(this, {config: this.normalizePaths(cfg.config, cfg.base)});
 
   if(typeof cfg.routes === 'string'){
     var routesFile = new Dir.File(cfg.base, cfg.routes);
@@ -127,8 +132,8 @@ CMS.prototype = {
     //console.log(data)
   },
   _initRoutes: function(routes) {
-    this.routes = Object.assign( {}, this.defaultRoutes() );
-    this.routes = Object.assign( this.routes, routes );
+    this.routes = Object.assign( {}, this.routes );
+    this.routes = Object.assign( this.defaultRoutes(), routes );
   },
   extendAPI: function(routes) {
     this.api(routes);
@@ -144,6 +149,13 @@ CMS.prototype = {
     !(Array.isArray(copy.template)) && (copy.template = [copy.template]);
     copy.template = copy.template.slice();
     copy.template = copy.template.map(item => new Dir(base || __dirname, item));
+
+    if(copy.scss && copy.scss.path){
+      copy.scssBaseDir = copy.template.map( item => {
+        return new Dir(item.base, path.join( item.dir, copy.scss.path ));
+      } )
+    }
+
     return copy;
   },
   init: function() {
@@ -194,7 +206,7 @@ CMS.prototype = {
       app.use(App.static(dir.path));
     });
     
-    api(this.__cfg.api || {});
+    api(this.currentAPI = this.__cfg.api || {});
 
     app.use(R);
     this.fire('afterInit');

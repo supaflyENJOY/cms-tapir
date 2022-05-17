@@ -2,11 +2,12 @@ module.exports = {
   modules: {
     server: true,
     serve: true,
-    admin: true
+    admin: true,
+    //live: true
   },
   static: ['public', 'src'],
-  template: 'template',
+  template: 'template'/*,
   scss: {
-    shared: '/shared.scss'
-  }
+    shared: '/scss/shared.scss'
+  }*/
 };

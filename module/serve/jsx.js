@@ -19,8 +19,8 @@ module.exports = {
 		//res.header('X-SourceMap', '/'+util.path.normalize(result.file.subPath)+'.map');
 		res.header('X-SourceMap', util.path.normalize(result.file.fileName)+'.map');
 	},
-  serve: async function(file, code, cfg, additional, staticCache){
-    var dependency;
+  serve: async function(file, code, cfg, additional, staticCache, main){
+  	var dependency;
     if( !code ){
       dependency = new fileReader.Dependency();
       code = await dependency.read( file );
@@ -120,7 +120,7 @@ module.exports = {
 						}
 					} );
 			} );
-		});
+		}, this.main.fileChanged);
 
 		return result;
   }

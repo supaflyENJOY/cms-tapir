@@ -25,7 +25,7 @@ async function subscribe() {
     try{
       let message = await response.text();
       let data = JSON.parse( message ),
-          should = data.filter(live =>
+          should = !data.error && data.filter(live =>
             [...document.scripts]
               .map((a)=>a.src.replace(location.protocol+'//'+location.host,''))
               .indexOf(live.file)>-1

@@ -6,6 +6,25 @@ const sass = require('node-sass'),
       useSourceMaps = env.ENV === 'DEVELOP';
 
 let cache = {};
+let pathCache = {};
+var isServing = false;
+var q = [];
+var scssQueue = function() {
+  var r;
+  var p = new Promise(function(resolve) {
+    r = resolve;
+  });
+  q.push(r);
+  console.log(q)
+  return p;
+};
+var nextScssFromQueue = function() {
+  if(q.length){
+    return q.pop()();
+  }else{
+    isServing = false;
+  }
+}
 module.exports = {
   setCache: function(theCache, useCache) {
 
@@ -23,6 +42,10 @@ module.exports = {
     }*/
   },
   serve: async function(file, code, config) {
+    if(isServing){
+      await scssQueue();
+    }
+    isServing = true;
     var dependency;
 
     if(!code){
@@ -40,6 +63,7 @@ module.exports = {
         if( config.scss && config.scss.shared ){
           code = `@import '${config.scss.shared}';` + ';\n' + code;
         }
+        pathCache[file.path] = baseFile;
         sass.render( {
           data: code,
           file: util.path.normalize(file.subPath),//path.join( __dirname, dir, req.url ),
@@ -47,18 +71,32 @@ module.exports = {
           importer: function( url, prev, done ){ //file, prev, done
             ;(async function(){
 
-              var {file, data} = await util.path.resolve( url, baseFile, config.template.slice().concat( config.static ) );
-              if(!file && url[0] !== '.'){
-                var {file, data} = await util.path.resolve( './'+url, baseFile, config.template.slice().concat( config.static ) );
+              var baseFilePointer = pathCache[prev] || baseFile;
+
+              var {file, data} = await util.path.resolve( url, baseFilePointer, config.template.slice().concat( config.static ).concat( config.scssBaseDir ) );
+              //console.log('  ~', baseFilePointer.path, prev, (file ? ' resolved ':' not resolved'), file?file.path:url);
+
+              if(!file && url[0] !== '.' && url[0] !== '/'){
+                var {file, data} = await util.path.resolve( './'+url, baseFilePointer, config.template.slice().concat( config.static ).concat( config.scssBaseDir ) );
+                /*if(file && file.path)
+                  console.log('  ~', baseFile.path, (file ? ' resolved ':' not resolved'), file?file.path:url);*/
               }
               if( file ){
+                //console.log('resolved ', url,'as', file.path)
+                pathCache[url] = file;
+                if(url[0] === '/'){
+                  pathCache[ url.substr( 1 ) ] = file;
+                }else{
+                  pathCache[ '/'+url ] = file;
+                }
                 var fileData = await dependency.read( {file, data} );
+
                 done( {
                   contents: fileData,
                   file: util.path.normalize(file.subPath)
                 } );
               }else{
-                console.error(`ERROR SCSS: can not resolve ${url} from ${baseFile.path}!`)
+                console.error(`ERROR SCSS: can not resolve ${url} from ${baseFilePointer.path}!`)
                 done( new Error( `Can not resolve dependency ${url} for ${prev}!` ) );
               }
             })();
@@ -73,6 +111,7 @@ module.exports = {
         } );
       }));
     });
+    nextScssFromQueue();
     return result;
   }
 }
