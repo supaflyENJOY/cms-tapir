@@ -103,10 +103,10 @@ updateCommitInfo();
 var CMS = function(cfg) {
   if(!cfg)
     cfg = {};
-  
+
   if(!cfg.base && module.parent)
     cfg.base = module.parent.path;
-  
+
   this.__cfg = cfg;
   Observable.call(this);
   util.deepAssign(this, {config: this.normalizePaths(this.defaultConfig(), __dirname)});
