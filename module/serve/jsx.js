@@ -91,6 +91,21 @@ module.exports = {
 
 
 								var {file, data} = await util.path.resolve( item.from, baseFile, config.template );
+								var ext = item.from.split('.').pop();
+								if(!file){
+									if(ext.length>5){
+										var {file, data} = await util.path.resolve( item.from+'.jsx', baseFile, config.template );
+										if(file)
+											item.from+='.jsx';
+
+										if(!file){
+											var {file, data} = await util.path.resolve( item.from+'.js', baseFile, config.template );
+											if(file)
+												item.from+='.js';
+										}
+									}
+								}
+
 								dependency.register(file)
 								return { base: baseFile, file: item.from, resolved: file, pos: item.fromLocation };
 								file = file[ 0 ].replace( /\\/g, '/' );

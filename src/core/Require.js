@@ -58,8 +58,12 @@ ansispan.foregroundColors = {
         } )
         .then( function( response ){
           //if( data.match( /^(unknown|Error|SyntaxError|error)/ ) !== null ){
-          var data = JSON.parse(response);
-
+          try {
+            var data = JSON.parse(response);
+          }catch(e){
+            data = {error: true};
+            console.error('Error while loading '+source + '!', e);
+          }
             var urla = source.substr( document.location.origin.length );
             urla[ 0 ] === '/' && ( urla = urla.substr( 1 ) );
             if( define.waiting[ urla ] ){

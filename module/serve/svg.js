@@ -32,7 +32,7 @@ module.exports = {
        // pathName = pathName.replace( 'template//', '' ).replace( 'template/', '' )
         //debugger//"${req.url.replace(/\//g,'.').split('.').filter(String).join('.')}"
         bCore.transform(
-          `const SVG = D.declare("${file.subPath}", (cfg)=>{ return ${( code + '' ).replace( /(<svg[^>]+"\s*)>/i, '$1 {...cfg}>' )}; });
+          `const SVG = D.declare("${file.subPath.replace(/\\/g,'/')}", (cfg)=>{ return ${( code + '' ).replace( /(<svg[^>]+"\s*)>/i, '$1 {...cfg}>' )}; });
             export default SVG;
             `,
           {

@@ -25,7 +25,7 @@ const util = module.exports =  global.util = {
           try{
             file = dirs[i].file(filePath)
             data = await fileReader.read( file );
-            console.log('match', file.path)
+            //console.log('match', file.path)
             return {file, data};
           }catch( e ){ }
         }

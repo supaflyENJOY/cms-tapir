@@ -15,7 +15,7 @@ var scssQueue = function() {
     r = resolve;
   });
   q.push(r);
-  console.log(q)
+  //console.log(q)
   return p;
 };
 var nextScssFromQueue = function() {
