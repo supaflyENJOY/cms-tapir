@@ -28,6 +28,10 @@ module.exports = {
 			dependency = new fileReader.Dependency(file);
       //code = new fileReader.Dependency( file );
     }
+
+		if(additional && additional.route && additional.route.cacheToken){
+			dependency.register(typeof additional.route.cacheToken === 'function' ? additional.route.cacheToken(additional): additional.route.cacheToken)
+		}
     if(additional && additional.onChange){
     	var listenUpdate = function(fileName) {
     		if(fileName === file.path){
@@ -40,12 +44,16 @@ module.exports = {
 			);
 		}
 
-		var configFile = file.clone(), configObject;
-		configFile.ext = 'json5';
-    try{
-			configObject = JSON5.parse( await dependency.read( configFile ) )
-		}catch( e ){
-		}
+	  var configFile = file.clone(), configObject;
+	  configFile.ext = 'json5';
+	  if(additional && additional.route && additional.route.input){
+		  configObject = Object.assign({}, additional.route.input, {data: null, html: null});
+
+	  }else {
+		  try {
+			  configObject = JSON5.parse( await dependency.read( configFile ) )
+		  } catch( e ) { }
+	  }
     /*if( code in cacheCode ){
       return cacheCode[ code ];//.error, cacheCode[code].code)
     }*/

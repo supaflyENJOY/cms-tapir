@@ -33,7 +33,7 @@ module.exports = {
     	return false;
 		}
     var htmlData = await dependency.read(resolved);
-		var js = await jsx.serve(file, code);
+		var js = await jsx.serve(file, code, config, additional);
 		var config = {};
 		if(htmlData && (js && !js.error)){
 			var cachedBundle = '';
@@ -107,9 +107,19 @@ module.exports = {
       ))
     });`
 			});
+			if(additional && additional.route && additional.route.input){
+				inputs = Object.assign(inputs, additional.route.input);
+			}
 			var finalHTML = htmlData;
 			for(var key in inputs){
-				finalHTML = finalHTML.replace(new RegExp('%'+key.toUpperCase()+'%', 'g'), typeof inputs[key] === 'object' ? JSON.stringify(inputs[key]): inputs[key])
+				finalHTML = finalHTML.replace(new RegExp('%'+key.toUpperCase()+'%', 'g'), typeof inputs[key] === 'object' ?
+					JSON.stringify(inputs[key]):
+					typeof inputs[key] === 'function' ?
+						function(a, b){
+							return inputs[key].call(inputs, a, b);
+						}: // function call
+						inputs[key]
+				)
 			}
 
 			result = {error: false, data: {
