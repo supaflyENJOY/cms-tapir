@@ -34,6 +34,9 @@ module.exports = {
 		}
     var htmlData = await dependency.read(resolved);
 		var js = await jsx.serve(file, code, config, additional);
+		var serveConfig = config;
+
+		// TODO rename!!!
 		var config = {};
 		if(htmlData && (js && !js.error)){
 			var cachedBundle = '';
@@ -112,14 +115,31 @@ module.exports = {
 			}
 			var finalHTML = htmlData;
 			for(var key in inputs){
-				finalHTML = finalHTML.replace(new RegExp('%'+key.toUpperCase()+'%', 'g'), typeof inputs[key] === 'object' ?
-					JSON.stringify(inputs[key]):
-					typeof inputs[key] === 'function' ?
-						function(a, b){
-							return inputs[key].call(inputs, a, b);
-						}: // function call
-						inputs[key]
-				)
+				finalHTML = finalHTML.replace(new RegExp('%'+key.toUpperCase()+'(?::([a-zA-Z_]+))?%', 'g'), function(full, operations){
+					var out = full;
+				  if(typeof inputs[key] === 'object') {
+						out = JSON.stringify( inputs[ key ] )
+					}else if(typeof inputs[key] === 'function'){
+						out = inputs[key].call(inputs, key); // function call
+					}else{
+						out = inputs[key];
+					}
+					if(operations){
+						if(!serveConfig.userFunctions){
+							console.error('User functions are not declared in the Tapir config');
+							return out;
+						}
+
+						if(!(operations in serveConfig.userFunctions)){
+							console.error(`User function ${operations} is not declared in the Tapir config`);
+							return out;
+						}
+
+						return serveConfig.userFunctions[operations].call(inputs, out);
+					}
+					return out;
+				});
+
 			}
 
 			result = {error: false, data: {
