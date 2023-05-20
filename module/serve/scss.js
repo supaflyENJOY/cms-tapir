@@ -1,5 +1,8 @@
-var gDocument = document;
-global.document = void 0;
+if(typeof global.document !== void 0) {
+  // other way sass would think that it is in the browser env and would not expose its API
+  var gDocument = global.document;
+  global.document = void 0;
+}
 const sass = require('sass'),
   fileReader = require('../../src/fileReader.js'),
   env = process.env,
@@ -7,7 +10,9 @@ const sass = require('sass'),
 
   useSourceMaps = env.ENV === 'DEVELOP';
 
-global.document = gDocument;
+if(typeof gDocument !== void 0) {
+  global.document = gDocument;
+}
 
 let cache = {};
 let pathCache = {};
