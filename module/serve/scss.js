@@ -1,9 +1,13 @@
-const sass = require('node-sass'),
-      fileReader = require('../../src/fileReader.js'),
-      env = process.env,
-      path = require('path'),
+var gDocument = document;
+global.document = void 0;
+const sass = require('sass'),
+  fileReader = require('../../src/fileReader.js'),
+  env = process.env,
+  path = require('path'),
 
-      useSourceMaps = env.ENV === 'DEVELOP';
+  useSourceMaps = env.ENV === 'DEVELOP';
+
+global.document = gDocument;
 
 let cache = {};
 let pathCache = {};
