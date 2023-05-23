@@ -23,8 +23,17 @@ File.prototype = {
 	},
 	set fileName(fileName){
 		var fileToken = fileName.split('.');
-		this.file = fileToken[0];
-		this.ext = fileToken.slice(1).join('.');
+
+    // TODO: check why it was this:
+    // this.file = fileToken[0];
+		// this.ext = fileToken.slice(1).join('.');
+    if(fileToken.length>1) {
+      this.ext = fileToken.pop();
+      this.file = fileToken.join( '.' );
+    }else{
+      this.ext = '';
+		  this.file = fileToken[0];
+    }
 		this._fileName = fileName;
 	},
 	get fileName(){
