@@ -1,6 +1,6 @@
 {
   "name": "cms-tapir",
-  "version": "0.3.36",
+  "version": "0.3.40",
   "dependencies": {
     "@babel/core": "^7.8.3",
     "@babel/helper-plugin-utils": "^7.10.4",
@@ -13,7 +13,7 @@
     "@editorjs/editorjs": "^2.19.0",
     "@editorjs/header": "^2.6.1",
     "@editorjs/list": "^1.6.1",
-    "api-tapir": "*",
+    "api-tapir": "^0.15.5",
     "babel-plugin-extract-import-names": "^1.6.21",
     "babel-plugin-module-resolver": "^4.0.0",
     "babel-preset-es2015": "*",
