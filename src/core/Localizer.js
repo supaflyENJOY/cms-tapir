@@ -1,14 +1,19 @@
 (function(w) {
   var LFunc = function Localize(str){
-    return str.split('.').reduce(function(store, part){
+    L._localized++;
+    var result = str.split('.').reduce(function(store, part){
       if(!(part in store)){
         console.error(`No localization for ${str}`)
       }
       return store[part];
     }, L.currentLocale);
+    if(typeof result === 'function')
+      result = result(arguments[1]);
+    return result;
   };
 
   var L = {
+    _localized: 0,
     lower: function(){
       return (LFunc.apply(L, arguments)+'').toLowerCase();
     },
