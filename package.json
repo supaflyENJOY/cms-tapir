@@ -13,7 +13,7 @@
     "@editorjs/editorjs": "^2.19.0",
     "@editorjs/header": "^2.6.1",
     "@editorjs/list": "^1.6.1",
-    "api-tapir": "github:supaflyENJOY/Tapir",
+    "api-tapir": "github:supaflyENJOY/Tapir#12ed659915480e529bba376db10c2d5dceb62a87",
     "babel-plugin-extract-import-names": "^1.6.21",
     "babel-plugin-module-resolver": "^4.0.0",
     "babel-preset-es2015": "*",
