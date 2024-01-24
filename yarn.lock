@@ -1021,9 +1021,9 @@
     "normalize-path" "^3.0.0"
     "picomatch" "^2.0.4"
 
-"api-tapir@github:supaflyENJOY/Tapir#12ed659915480e529bba376db10c2d5dceb62a87":
-  "integrity" "sha512-XFOCszTrUNPgncyP/uqd5wcqbve9KNdUH35ph99CeXEYnuS3ju2rxh21qUf+G1ys2nbXcMGVvRvWEjeD6T95Dw=="
-  "resolved" "git+ssh://git@github.com/supaflyENJOY/Tapir.git#12ed659915480e529bba376db10c2d5dceb62a87"
+"api-tapir@github:supaflyENJOY/Tapir#71776a06f065e3b9d54a059cae8e80a1e8631e4e":
+  "integrity" "sha512-SXPbXSERWFDI4t4fIliDQi7IHZkSF+U8mwTBckv8PySI+ZQer+7zSx4w5qAMDKB8pXiEOasgl0lRbNDPOfCBaA=="
+  "resolved" "git+ssh://git@github.com/supaflyENJOY/Tapir.git#71776a06f065e3b9d54a059cae8e80a1e8631e4e"
   "version" "0.15.5"
   dependencies:
     "node-async-router" "^0.0.2"
