@@ -53,7 +53,7 @@ const updateCommitInfo = function() {
 updateCommitInfo();
 
 const R = new App.Router,
-  Tapir = require('api-tapir'),
+  Tapir = require('lrl-api-tapir'),
   api = new Tapir({
     timeout: 6666,
     router: R,

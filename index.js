@@ -182,7 +182,7 @@ CMS.prototype = {
     projectDir.path = base;
 
     const R = new App.Router,
-      Tapir = require('api-tapir'),
+      Tapir = require('lrl-api-tapir'),
       api = new Tapir({
         timeout: 6666,
         router: R,
@@ -505,5 +505,5 @@ ${blockCode}
   }
 };
 Object.assign(CMS.prototype, Observable.prototype)
-CMS.Group = require('api-tapir').Group;
+CMS.Group = require('lrl-api-tapir').Group;
 module.exports = CMS;
